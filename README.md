@@ -4,11 +4,11 @@
 
 ## 실행
 
-Java 21 환경에서 Google Maps API 키를 환경 변수로 설정한 뒤 실행합니다.
+Java 21 환경에서 Google Maps API 키를 환경 변수로 설정한 뒤 실행합니다. macOS에서 Homebrew로 설치한 Java가 시스템에 자동 연결되지 않아도 `run.sh`가 Java 21 경로를 찾아 실행합니다.
 
 ```bash
 export GOOGLE_MAPS_API_KEY="YOUR_KEY"
-./gradlew bootRun
+./run.sh
 ```
 
 브라우저에서 <http://localhost:8080>을 엽니다. 키는 Git에 커밋하지 않습니다. 환경 변수 대신 Git에서 제외되는 `src/main/resources/application-local.yml`에 아래처럼 둘 수도 있습니다.

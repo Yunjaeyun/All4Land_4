@@ -174,9 +174,167 @@
         const resultList = document.getElementById("listing-results");
         const status = document.getElementById("status");
         const infoWindow = new google.maps.InfoWindow();
-        const listingLayer = new google.maps.Data({ map });
         let listings = [];
-        let listingById = new Map();
+        let safetyReady = false;
+        let safetyResumeTimer = null;
+
+        class ListingCanvasLayer extends google.maps.OverlayView {
+            constructor() {
+                super();
+                this.listings = [];
+                this.renderedPoints = [];
+                this.canvas = null;
+                this.renderTimer = null;
+            }
+
+            onAdd() {
+                this.canvas = document.createElement("canvas");
+                this.canvas.style.position = "absolute";
+                this.canvas.style.pointerEvents = "none";
+                this.canvas.style.zIndex = "3";
+                this.getPanes().overlayMouseTarget.appendChild(this.canvas);
+            }
+
+            onRemove() {
+                clearTimeout(this.renderTimer);
+                this.canvas?.remove();
+                this.canvas = null;
+                this.renderedPoints = [];
+            }
+
+            setListings(nextListings) {
+                this.listings = nextListings.map((listing) => ({
+                    ...listing,
+                    latLng: new google.maps.LatLng(listing.latitude, listing.longitude)
+                }));
+                this.draw();
+            }
+
+            draw() {
+                clearTimeout(this.renderTimer);
+                this.renderTimer = setTimeout(() => this.render(), 80);
+            }
+
+            render() {
+                if (!this.canvas || !this.getMap()) return;
+                const bounds = this.getMap().getBounds();
+                const projection = this.getProjection();
+                if (!bounds || !projection) return;
+
+                const padding = 20;
+                const northEast = projection.fromLatLngToDivPixel(bounds.getNorthEast());
+                const southWest = projection.fromLatLngToDivPixel(bounds.getSouthWest());
+                const left = Math.floor(southWest.x) - padding;
+                const top = Math.floor(northEast.y) - padding;
+                const width = Math.max(1, Math.ceil(northEast.x - southWest.x) + padding * 2);
+                const height = Math.max(1, Math.ceil(southWest.y - northEast.y) + padding * 2);
+                const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+
+                this.canvas.style.left = `${left}px`;
+                this.canvas.style.top = `${top}px`;
+                this.canvas.style.width = `${width}px`;
+                this.canvas.style.height = `${height}px`;
+                this.canvas.width = Math.ceil(width * pixelRatio);
+                this.canvas.height = Math.ceil(height * pixelRatio);
+
+                const context = this.canvas.getContext("2d");
+                context.scale(pixelRatio, pixelRatio);
+                context.clearRect(0, 0, width, height);
+
+                const north = bounds.getNorthEast().lat();
+                const east = bounds.getNorthEast().lng();
+                const south = bounds.getSouthWest().lat();
+                const west = bounds.getSouthWest().lng();
+                const zoom = this.getMap().getZoom() || 10;
+                const cellSize = zoom <= 10 ? 18 : zoom <= 12 ? 14 : 10;
+                const clusters = new Map();
+
+                for (const listing of this.listings) {
+                    if (listing.latitude < south || listing.latitude > north ||
+                        listing.longitude < west || listing.longitude > east) continue;
+
+                    const point = projection.fromLatLngToDivPixel(listing.latLng);
+                    const x = point.x - left;
+                    const y = point.y - top;
+                    const key = `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
+                    const cluster = clusters.get(key);
+                    if (cluster) {
+                        cluster.count += 1;
+                        cluster.xTotal += x;
+                        cluster.yTotal += y;
+                        cluster.latTotal += listing.latitude;
+                        cluster.lngTotal += listing.longitude;
+                    } else {
+                        clusters.set(key, {
+                            count: 1,
+                            xTotal: x,
+                            yTotal: y,
+                            latTotal: listing.latitude,
+                            lngTotal: listing.longitude,
+                            listing
+                        });
+                    }
+                }
+
+                this.renderedPoints = [];
+                for (const cluster of clusters.values()) {
+                    const x = cluster.xTotal / cluster.count;
+                    const y = cluster.yTotal / cluster.count;
+                    const radius = cluster.count === 1 ? 4 : Math.min(15, 6 + Math.log2(cluster.count));
+                    context.beginPath();
+                    context.arc(x, y, radius, 0, Math.PI * 2);
+                    context.fillStyle = cluster.count === 1 ? "rgba(227, 79, 99, 0.9)" : "rgba(196, 55, 78, 0.92)";
+                    context.fill();
+                    context.lineWidth = 1.5;
+                    context.strokeStyle = "rgba(255, 255, 255, 0.96)";
+                    context.stroke();
+
+                    if (cluster.count > 1) {
+                        context.fillStyle = "#ffffff";
+                        context.font = "bold 10px Arial, sans-serif";
+                        context.textAlign = "center";
+                        context.textBaseline = "middle";
+                        context.fillText(cluster.count > 99 ? "99+" : String(cluster.count), x, y);
+                    }
+
+                    this.renderedPoints.push({
+                        x: x + left,
+                        y: y + top,
+                        radius: radius + 5,
+                        count: cluster.count,
+                        latitude: cluster.latTotal / cluster.count,
+                        longitude: cluster.lngTotal / cluster.count,
+                        listing: cluster.listing
+                    });
+                }
+            }
+
+            handleClick(latLng) {
+                if (!this.getMap()) return false;
+                const clickPoint = this.getProjection().fromLatLngToDivPixel(latLng);
+                let closest = null;
+                let closestDistance = Infinity;
+                for (const point of this.renderedPoints) {
+                    const distance = Math.hypot(point.x - clickPoint.x, point.y - clickPoint.y);
+                    if (distance <= point.radius && distance < closestDistance) {
+                        closest = point;
+                        closestDistance = distance;
+                    }
+                }
+                if (!closest) return false;
+
+                if (closest.count > 1) {
+                    this.getMap().panTo({ lat: closest.latitude, lng: closest.longitude });
+                    this.getMap().setZoom(Math.min((this.getMap().getZoom() || 10) + 2, 18));
+                } else {
+                    showListing(closest.listing);
+                }
+                return true;
+            }
+        }
+
+        const listingLayer = new ListingCanvasLayer();
+        listingLayer.setMap(map);
 
         map.data.setStyle((feature) => ({
             fillColor: SAFETY_COLORS[feature.getProperty("level")] || SAFETY_COLORS[0],
@@ -187,19 +345,6 @@
             clickable: false
         }));
 
-        listingLayer.setStyle({
-            icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 4,
-                fillColor: "#e34f63",
-                fillOpacity: 0.9,
-                strokeColor: "#ffffff",
-                strokeOpacity: 0.95,
-                strokeWeight: 1
-            },
-            zIndex: 3
-        });
-
         const safetyPromise = fetch("/data/london-lsoa-safety.json")
             .then((response) => {
                 if (!response.ok) throw new Error(`Safety HTTP ${response.status}`);
@@ -207,6 +352,7 @@
             })
             .then((geojson) => {
                 map.data.addGeoJson(geojson);
+                safetyReady = true;
                 safetyCheckbox.disabled = false;
                 legend.hidden = false;
             });
@@ -218,14 +364,7 @@
             })
             .then((payload) => {
                 listings = payload.listings;
-                listingById = new Map(listings.map((listing) => [listing.id, listing]));
-                for (const listing of listings) {
-                    listingLayer.add(new google.maps.Data.Feature({
-                        id: listing.id,
-                        geometry: new google.maps.Data.Point({ lat: listing.latitude, lng: listing.longitude }),
-                        properties: listing
-                    }));
-                }
+                listingLayer.setListings(listings);
                 airbnbCheckbox.disabled = false;
                 listingTools.hidden = false;
                 renderResults();
@@ -296,10 +435,26 @@
             if (map.getZoom() < 14) map.setZoom(14);
         }
 
-        listingLayer.addListener("click", (event) => {
-            const listing = listingById.get(String(event.feature.getId()));
-            if (listing) showListing(listing);
+        map.addListener("click", (event) => {
+            listingLayer.handleClick(event.latLng);
         });
+
+        function suspendSafetyRendering() {
+            if (!safetyReady || !safetyCheckbox.checked) return;
+            clearTimeout(safetyResumeTimer);
+            map.data.setMap(null);
+        }
+
+        function resumeSafetyRendering() {
+            clearTimeout(safetyResumeTimer);
+            safetyResumeTimer = setTimeout(() => {
+                if (safetyReady && safetyCheckbox.checked) map.data.setMap(map);
+            }, 100);
+        }
+
+        map.addListener("zoom_changed", suspendSafetyRendering);
+        map.addListener("dragstart", suspendSafetyRendering);
+        map.addListener("idle", resumeSafetyRendering);
 
         safetyCheckbox.addEventListener("change", () => {
             map.data.setMap(safetyCheckbox.checked ? map : null);
