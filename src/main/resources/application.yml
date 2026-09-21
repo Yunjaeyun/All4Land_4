@@ -1,3 +1,12 @@
+spring:
+  config:
+    import: optional:classpath:application-local.yml
+
+server:
+  compression:
+    enabled: true
+    mime-types: application/geo+json,application/json,text/html,text/css,application/javascript
+
 google:
   maps:
-    key:
+    key: ${GOOGLE_MAPS_API_KEY:}

@@ -1,18 +1,327 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>London Safety Map</title>
-    <style>#map { height: 100vh; width: 100%; } body { margin: 0; }</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>London Safety & Airbnb Map</title>
+    <style>
+        :root { color-scheme: light; font-family: Arial, "Noto Sans KR", sans-serif; }
+        * { box-sizing: border-box; }
+        html, body, #map { width: 100%; height: 100%; margin: 0; }
+
+        .map-panel {
+            position: fixed;
+            z-index: 2;
+            top: 16px;
+            left: 16px;
+            display: flex;
+            flex-direction: column;
+            width: min(340px, calc(100vw - 32px));
+            max-height: calc(100vh - 32px);
+            padding: 16px;
+            overflow: hidden;
+            border: 1px solid #dde3e9;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.97);
+            box-shadow: 0 4px 18px rgba(29, 45, 61, 0.18);
+        }
+
+        .map-panel h1 { margin: 0 0 5px; color: #182733; font-size: 18px; }
+        .description { margin: 0 0 12px; color: #5d6b76; font-size: 12px; line-height: 1.45; }
+
+        .layer-toggle {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            min-height: 40px;
+            margin-top: 7px;
+            padding: 9px 11px;
+            border: 1px solid #cfd8df;
+            border-radius: 8px;
+            color: #1d2d39;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .layer-toggle input { width: 18px; height: 18px; margin: 0; accent-color: #247b65; }
+
+        .legend { margin: 11px 0 4px; border-top: 1px solid #e5e9ed; padding-top: 10px; }
+        .legend-title { display: flex; justify-content: space-between; margin-bottom: 7px; color: #4b5b67; font-size: 11px; }
+        .legend-colors { display: grid; grid-template-columns: repeat(5, 1fr); height: 10px; overflow: hidden; border-radius: 5px; }
+        .legend-colors span:nth-child(1) { background: #2d9d78; }
+        .legend-colors span:nth-child(2) { background: #92c96b; }
+        .legend-colors span:nth-child(3) { background: #f1cf63; }
+        .legend-colors span:nth-child(4) { background: #ef8a51; }
+        .legend-colors span:nth-child(5) { background: #d9534f; }
+
+        .listing-tools { min-height: 0; margin-top: 11px; border-top: 1px solid #e5e9ed; padding-top: 11px; }
+        .field-label { display: block; margin-bottom: 5px; color: #3f4e59; font-size: 11px; font-weight: 700; }
+        .sort-select {
+            width: 100%;
+            height: 38px;
+            border: 1px solid #cfd8df;
+            border-radius: 7px;
+            background: #fff;
+            color: #1d2d39;
+            font-size: 13px;
+        }
+        .sort-select { padding: 0 8px; }
+        .sort-select:focus { border-color: #247b65; outline: 2px solid rgba(36, 123, 101, 0.15); }
+        .sort-select:disabled { background: #f1f3f5; color: #89939b; }
+
+        .result-summary { margin: 9px 0 6px; color: #697680; font-size: 11px; }
+        .listing-results { max-height: min(260px, 34vh); margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+        .listing-results li + li { border-top: 1px solid #edf0f2; }
+        .listing-result {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 5px 10px;
+            width: 100%;
+            padding: 9px 4px;
+            border: 0;
+            background: transparent;
+            color: #22313c;
+            cursor: pointer;
+            text-align: left;
+        }
+        .listing-result:hover, .listing-result:focus { background: #f3f8f6; outline: none; }
+        .listing-title { overflow: hidden; font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+        .listing-price { color: #c64f43; font-size: 12px; font-weight: 700; }
+        .listing-meta { grid-column: 1 / -1; color: #76828b; font-size: 10px; }
+
+        .status, .attribution { margin-top: 9px; color: #78858e; font-size: 10px; line-height: 1.4; }
+        .status[hidden], .legend[hidden], .listing-tools[hidden] { display: none; }
+
+        .info-card { max-width: 250px; color: #263641; font-family: Arial, "Noto Sans KR", sans-serif; }
+        .info-card h2 { margin: 0 0 8px; font-size: 15px; line-height: 1.35; }
+        .info-price { margin-bottom: 8px; color: #c64f43; font-size: 15px; font-weight: 700; }
+        .info-row { margin-top: 4px; color: #56646e; font-size: 11px; }
+
+        @media (max-width: 520px) {
+            .map-panel { top: 10px; left: 10px; width: calc(100vw - 20px); max-height: 52vh; }
+            .listing-results { max-height: 130px; }
+        }
+    </style>
 </head>
 <body>
-<div id="map"></div>
+<aside class="map-panel" aria-label="지도 레이어와 숙소 검색">
+    <h1>런던 치안·숙소 지도</h1>
+    <p class="description">LSOA별 치안 수준과 London Airbnb 숙소를 함께 표시합니다.</p>
+
+    <label class="layer-toggle" for="safety-layer">
+        <input id="safety-layer" type="checkbox" checked disabled>
+        지역별 치안 주제도
+    </label>
+    <label class="layer-toggle" for="airbnb-layer">
+        <input id="airbnb-layer" type="checkbox" checked disabled>
+        Airbnb 숙소
+    </label>
+
+    <div id="legend" class="legend" hidden>
+        <div class="legend-title"><span>범죄율 낮음</span><span>범죄율 높음</span></div>
+        <div class="legend-colors" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+
+    <section id="listing-tools" class="listing-tools" hidden aria-label="숙소 가격 정렬">
+        <label class="field-label" for="price-sort">가격 정렬</label>
+        <select id="price-sort" class="sort-select" aria-label="가격 정렬">
+            <option value="asc">가격 낮은 순</option>
+            <option value="desc">가격 높은 순</option>
+        </select>
+        <div id="result-summary" class="result-summary" aria-live="polite"></div>
+        <ul id="listing-results" class="listing-results"></ul>
+    </section>
+
+    <div id="status" class="status" role="status" aria-live="polite">지도 데이터를 불러오는 중…</div>
+    <div class="attribution">
+        Metropolitan Police · ONS · GLA · Kaggle Airbnb dataset<br>
+        Contains National Statistics and OS data © Crown copyright and database right 2024
+    </div>
+</aside>
+<div id="map" aria-label="런던 치안 수준과 Airbnb 숙소 지도"></div>
+
 <script th:inline="javascript">
-    function initMap() {
-        new google.maps.Map(document.getElementById("map"), {
-            center: { lat: 51.5074, lng: -0.1278 }, // 런던 중심
-            zoom: 12
+    const SAFETY_COLORS = ["#9ca3af", "#2d9d78", "#92c96b", "#f1cf63", "#ef8a51", "#d9534f"];
+    const PRICE_FORMAT = new Intl.NumberFormat("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const ROOM_LABELS = {
+        "Entire home/apt": "집 전체",
+        "Private room": "개인실",
+        "Shared room": "다인실",
+        "Hotel room": "호텔 객실"
+    };
+
+    async function initMap() {
+        const map = new google.maps.Map(document.getElementById("map"), {
+            center: { lat: 51.5074, lng: -0.1278 },
+            zoom: 10,
+            minZoom: 9,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+            styles: [
+                { featureType: "poi", stylers: [{ visibility: "off" }] },
+                { featureType: "transit", stylers: [{ visibility: "off" }] }
+            ]
         });
+
+        const safetyCheckbox = document.getElementById("safety-layer");
+        const airbnbCheckbox = document.getElementById("airbnb-layer");
+        const legend = document.getElementById("legend");
+        const listingTools = document.getElementById("listing-tools");
+        const sortSelect = document.getElementById("price-sort");
+        const resultSummary = document.getElementById("result-summary");
+        const resultList = document.getElementById("listing-results");
+        const status = document.getElementById("status");
+        const infoWindow = new google.maps.InfoWindow();
+        const listingLayer = new google.maps.Data({ map });
+        let listings = [];
+        let listingById = new Map();
+
+        map.data.setStyle((feature) => ({
+            fillColor: SAFETY_COLORS[feature.getProperty("level")] || SAFETY_COLORS[0],
+            fillOpacity: feature.getProperty("level") === 0 ? 0.28 : 0.58,
+            strokeColor: "#ffffff",
+            strokeOpacity: 0.72,
+            strokeWeight: 0.45,
+            clickable: false
+        }));
+
+        listingLayer.setStyle({
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 4,
+                fillColor: "#e34f63",
+                fillOpacity: 0.9,
+                strokeColor: "#ffffff",
+                strokeOpacity: 0.95,
+                strokeWeight: 1
+            },
+            zIndex: 3
+        });
+
+        const safetyPromise = fetch("/data/london-lsoa-safety.json")
+            .then((response) => {
+                if (!response.ok) throw new Error(`Safety HTTP ${response.status}`);
+                return response.json();
+            })
+            .then((geojson) => {
+                map.data.addGeoJson(geojson);
+                safetyCheckbox.disabled = false;
+                legend.hidden = false;
+            });
+
+        const listingPromise = fetch("/data/london-airbnb-listings.json")
+            .then((response) => {
+                if (!response.ok) throw new Error(`Airbnb HTTP ${response.status}`);
+                return response.json();
+            })
+            .then((payload) => {
+                listings = payload.listings;
+                listingById = new Map(listings.map((listing) => [listing.id, listing]));
+                for (const listing of listings) {
+                    listingLayer.add(new google.maps.Data.Feature({
+                        id: listing.id,
+                        geometry: new google.maps.Data.Point({ lat: listing.latitude, lng: listing.longitude }),
+                        properties: listing
+                    }));
+                }
+                airbnbCheckbox.disabled = false;
+                listingTools.hidden = false;
+                renderResults();
+            });
+
+        function sortedListings() {
+            const direction = sortSelect.value === "desc" ? -1 : 1;
+            return [...listings].sort((a, b) => direction * (a.priceTotal - b.priceTotal) || a.id.localeCompare(b.id));
+        }
+
+        function renderResults() {
+            const results = sortedListings();
+            const shown = results.slice(0, 50);
+            resultSummary.textContent = `${results.length.toLocaleString("ko-KR")}개 중 ${shown.length}개 표시`;
+            resultList.replaceChildren();
+
+            for (const listing of shown) {
+                const item = document.createElement("li");
+                const button = document.createElement("button");
+                const title = document.createElement("span");
+                const price = document.createElement("span");
+                const meta = document.createElement("span");
+                button.type = "button";
+                button.className = "listing-result";
+                title.className = "listing-title";
+                price.className = "listing-price";
+                meta.className = "listing-meta";
+                title.textContent = ROOM_LABELS[listing.roomType] || listing.roomType;
+                price.textContent = PRICE_FORMAT.format(listing.priceTotal);
+                meta.textContent = `${listing.dayType === "weekday" ? "주중" : "주말"} · 최대 ${listing.maxGuests}명 · 침실 ${listing.bedrooms}개`;
+                button.append(title, price, meta);
+                button.addEventListener("click", () => showListing(listing));
+                item.append(button);
+                resultList.append(item);
+            }
+        }
+
+        function createInfoCard(listing) {
+            const card = document.createElement("div");
+            const title = document.createElement("h2");
+            const price = document.createElement("div");
+            card.className = "info-card";
+            title.textContent = ROOM_LABELS[listing.roomType] || listing.roomType;
+            price.className = "info-price";
+            price.textContent = `총가격 ${PRICE_FORMAT.format(listing.priceTotal)}`;
+            card.append(title, price);
+            const details = [
+                `${listing.dayType === "weekday" ? "주중" : "주말"} · 최대 ${listing.maxGuests}명 · 침실 ${listing.bedrooms}개`,
+                `청결도 ${listing.cleanlinessScore} · 만족도 ${listing.satisfactionScore}`,
+                `도심 ${listing.distanceCityCenter}km · 지하철 ${listing.distanceMetro}km`,
+                listing.isSuperhost ? "슈퍼호스트" : "일반 호스트"
+            ];
+            for (const detail of details) {
+                const row = document.createElement("div");
+                row.className = "info-row";
+                row.textContent = detail;
+                card.append(row);
+            }
+            return card;
+        }
+
+        function showListing(listing) {
+            const position = { lat: listing.latitude, lng: listing.longitude };
+            infoWindow.setContent(createInfoCard(listing));
+            infoWindow.setPosition(position);
+            infoWindow.open({ map });
+            map.panTo(position);
+            if (map.getZoom() < 14) map.setZoom(14);
+        }
+
+        listingLayer.addListener("click", (event) => {
+            const listing = listingById.get(String(event.feature.getId()));
+            if (listing) showListing(listing);
+        });
+
+        safetyCheckbox.addEventListener("change", () => {
+            map.data.setMap(safetyCheckbox.checked ? map : null);
+            legend.hidden = !safetyCheckbox.checked;
+        });
+
+        airbnbCheckbox.addEventListener("change", () => {
+            listingLayer.setMap(airbnbCheckbox.checked ? map : null);
+            sortSelect.disabled = !airbnbCheckbox.checked;
+            if (!airbnbCheckbox.checked) infoWindow.close();
+        });
+
+        sortSelect.addEventListener("change", renderResults);
+
+        const results = await Promise.allSettled([safetyPromise, listingPromise]);
+        const failures = results.filter((result) => result.status === "rejected");
+        if (failures.length === 0) {
+            status.hidden = true;
+        } else {
+            status.textContent = "일부 지도 데이터를 불러오지 못했습니다.";
+            failures.forEach((failure) => console.error(failure.reason));
+        }
     }
 </script>
 <script th:src="|https://maps.googleapis.com/maps/api/js?key=${mapsKey}&callback=initMap|" async defer></script>

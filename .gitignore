@@ -26,6 +26,10 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 
+### Python ###
+__pycache__/
+*.py[cod]
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
