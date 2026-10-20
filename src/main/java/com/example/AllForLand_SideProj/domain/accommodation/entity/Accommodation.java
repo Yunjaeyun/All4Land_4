@@ -3,7 +3,7 @@ package com.example.AllForLand_SideProj.domain.accommodation.entity;
 
 import com.example.AllForLand_SideProj.domain.accommodation.enums.RoomType;
 import com.example.AllForLand_SideProj.global.entity.BaseEntity;
-import com.example.AllForLand_SideProj.domain.safetyzone.SafetyZone;
+import com.example.AllForLand_SideProj.domain.safetyzone.entity.SafetyZone;
 import jakarta.persistence.*;
 import lombok.*;
 

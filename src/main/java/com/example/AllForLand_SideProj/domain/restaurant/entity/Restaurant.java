@@ -1,7 +1,7 @@
 package com.example.AllForLand_SideProj.domain.restaurant.entity;
 
 import com.example.AllForLand_SideProj.global.entity.BaseEntity;
-import com.example.AllForLand_SideProj.domain.safetyzone.SafetyZone;
+import com.example.AllForLand_SideProj.domain.safetyzone.entity.SafetyZone;
 import com.example.AllForLand_SideProj.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;

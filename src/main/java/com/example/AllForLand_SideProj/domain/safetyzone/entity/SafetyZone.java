@@ -1,4 +1,4 @@
-package com.example.AllForLand_SideProj.domain.safetyzone;
+package com.example.AllForLand_SideProj.domain.safetyzone.entity;
 
 
 import com.example.AllForLand_SideProj.global.entity.BaseEntity;
