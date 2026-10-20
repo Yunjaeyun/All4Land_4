@@ -1,0 +1,13 @@
+.git
+.gradle
+.idea
+build
+out
+scripts
+*.md
+
+# 비밀값이 이미지(jar)에 들어가지 않게 제외
+.env
+.env.*
+**/application-local.yml
+**/application-local.properties

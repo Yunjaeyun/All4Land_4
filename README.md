@@ -19,6 +19,10 @@ google:
     key: YOUR_KEY
 ```
 
+## 배포
+
+GCP VM에 docker compose로 배포합니다. 절차는 [docs/deploy.md](docs/deploy.md)를 참고하세요.
+
 ## 주제도 데이터
 
 - 경계: GLA Statistical GIS Boundary Files, LSOA 2021
