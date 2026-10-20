@@ -18,6 +18,11 @@ repositories {
 }
 
 dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.postgresql:postgresql'
+	implementation 'org.hibernate.orm:hibernate-spatial'
+	implementation 'org.locationtech.jts:jts-core:1.20.0'
+	implementation 'org.projectlombok:lombok'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	testImplementation 'org.springframework.boot:spring-boot-starter-thymeleaf-test'
