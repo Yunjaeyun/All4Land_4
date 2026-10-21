@@ -8,7 +8,7 @@ COPY gradle gradle
 RUN chmod +x gradlew && ./gradlew dependencies --no-daemon > /dev/null
 
 COPY src src
-# 테스트는 CI에서 따로 돌리므로 이미지 빌드에서는 제외
+# 테스트는 돌리지 않는다 (필요하면 로컬에서 ./gradlew test)
 RUN ./gradlew bootJar -x test --no-daemon
 
 # ---- run ----
