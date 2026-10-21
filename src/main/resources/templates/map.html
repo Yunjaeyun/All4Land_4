@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>London Safety & Airbnb Map</title>
+    <title>런던 지역별 GIS 주제도</title>
     <style>
         :root { color-scheme: light; font-family: Arial, "Noto Sans KR", sans-serif; }
         * { box-sizing: border-box; }
@@ -14,27 +14,24 @@
             z-index: 2;
             top: 16px;
             left: 16px;
-            display: flex;
-            flex-direction: column;
-            width: min(340px, calc(100vw - 32px));
-            max-height: calc(100vh - 32px);
-            padding: 16px;
-            overflow: hidden;
-            border: 1px solid #dde3e9;
+            width: min(350px, calc(100vw - 32px));
+            padding: 17px;
+            border: 1px solid #d7dee5;
             border-radius: 12px;
             background: rgba(255, 255, 255, 0.97);
             box-shadow: 0 4px 18px rgba(29, 45, 61, 0.18);
         }
 
-        .map-panel h1 { margin: 0 0 5px; color: #182733; font-size: 18px; }
-        .description { margin: 0 0 12px; color: #5d6b76; font-size: 12px; line-height: 1.45; }
+        h1 { margin: 0 0 5px; color: #182733; font-size: 18px; }
+        .description { margin: 0 0 13px; color: #5d6b76; font-size: 12px; line-height: 1.5; }
+        .layer-list { display: grid; gap: 7px; margin: 0; padding: 0; border: 0; }
+        .layer-list legend { margin-bottom: 6px; color: #40505c; font-size: 12px; font-weight: 700; }
 
         .layer-toggle {
             display: flex;
             align-items: center;
             gap: 9px;
             min-height: 40px;
-            margin-top: 7px;
             padding: 9px 11px;
             border: 1px solid #cfd8df;
             border-radius: 8px;
@@ -43,112 +40,102 @@
             font-size: 14px;
             font-weight: 700;
         }
+        .layer-toggle:has(input:checked) { border-color: #596d7c; background: #f5f8fa; }
+        .layer-toggle input { width: 18px; height: 18px; margin: 0; accent-color: #345f82; }
+        .layer-toggle input:disabled { cursor: wait; }
 
-        .layer-toggle input { width: 18px; height: 18px; margin: 0; accent-color: #247b65; }
-
-        .legend { margin: 11px 0 4px; border-top: 1px solid #e5e9ed; padding-top: 10px; }
-        .legend-title { display: flex; justify-content: space-between; margin-bottom: 7px; color: #4b5b67; font-size: 11px; }
-        .legend-colors { display: grid; grid-template-columns: repeat(5, 1fr); height: 10px; overflow: hidden; border-radius: 5px; }
-        .legend-colors span:nth-child(1) { background: #2d9d78; }
-        .legend-colors span:nth-child(2) { background: #92c96b; }
-        .legend-colors span:nth-child(3) { background: #f1cf63; }
-        .legend-colors span:nth-child(4) { background: #ef8a51; }
-        .legend-colors span:nth-child(5) { background: #d9534f; }
-
-        .listing-tools { min-height: 0; margin-top: 11px; border-top: 1px solid #e5e9ed; padding-top: 11px; }
-        .field-label { display: block; margin-bottom: 5px; color: #3f4e59; font-size: 11px; font-weight: 700; }
-        .sort-select {
-            width: 100%;
-            height: 38px;
-            border: 1px solid #cfd8df;
-            border-radius: 7px;
-            background: #fff;
-            color: #1d2d39;
-            font-size: 13px;
-        }
-        .sort-select { padding: 0 8px; }
-        .sort-select:focus { border-color: #247b65; outline: 2px solid rgba(36, 123, 101, 0.15); }
-        .sort-select:disabled { background: #f1f3f5; color: #89939b; }
-
-        .result-summary { margin: 9px 0 6px; color: #697680; font-size: 11px; }
-        .listing-results { max-height: min(260px, 34vh); margin: 0; padding: 0; overflow-y: auto; list-style: none; }
-        .listing-results li + li { border-top: 1px solid #edf0f2; }
-        .listing-result {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 5px 10px;
-            width: 100%;
-            padding: 9px 4px;
-            border: 0;
-            background: transparent;
-            color: #22313c;
-            cursor: pointer;
-            text-align: left;
-        }
-        .listing-result:hover, .listing-result:focus { background: #f3f8f6; outline: none; }
-        .listing-title { overflow: hidden; font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-        .listing-price { color: #c64f43; font-size: 12px; font-weight: 700; }
-        .listing-meta { grid-column: 1 / -1; color: #76828b; font-size: 10px; }
-
-        .status, .attribution { margin-top: 9px; color: #78858e; font-size: 10px; line-height: 1.4; }
-        .status[hidden], .legend[hidden], .listing-tools[hidden] { display: none; }
-
-        .info-card { max-width: 250px; color: #263641; font-family: Arial, "Noto Sans KR", sans-serif; }
-        .info-card h2 { margin: 0 0 8px; font-size: 15px; line-height: 1.35; }
-        .info-price { margin-bottom: 8px; color: #c64f43; font-size: 15px; font-weight: 700; }
-        .info-row { margin-top: 4px; color: #56646e; font-size: 11px; }
+        .legend { margin-top: 13px; border-top: 1px solid #e3e8ec; padding-top: 12px; }
+        .legend-heading { margin: 0 0 9px; color: #263743; font-size: 12px; font-weight: 700; }
+        .legend-items { display: grid; gap: 6px; }
+        .legend-item { display: grid; grid-template-columns: 16px 1fr; align-items: center; gap: 7px; color: #52616c; font-size: 11px; }
+        .legend-swatch { width: 16px; height: 12px; border: 1px solid rgba(25, 35, 42, 0.14); border-radius: 2px; }
+        .legend-note { margin: 9px 0 0; color: #78858e; font-size: 10px; line-height: 1.45; }
+        .status, .attribution { margin-top: 10px; color: #78858e; font-size: 10px; line-height: 1.45; }
+        [hidden] { display: none !important; }
 
         @media (max-width: 520px) {
-            .map-panel { top: 10px; left: 10px; width: calc(100vw - 20px); max-height: 52vh; }
-            .listing-results { max-height: 130px; }
+            .map-panel { top: 10px; left: 10px; width: calc(100vw - 20px); max-height: calc(100vh - 20px); overflow-y: auto; }
         }
     </style>
 </head>
 <body>
-<aside class="map-panel" aria-label="지도 레이어와 숙소 검색">
-    <h1>런던 치안·숙소 지도</h1>
-    <p class="description">LSOA별 치안 수준과 London Airbnb 숙소를 함께 표시합니다.</p>
+<aside class="map-panel" aria-label="런던 주제도 레이어 선택">
+    <h1>런던 지역별 GIS 주제도</h1>
+    <p class="description">LSOA 2021 구역 기준입니다. 체크박스는 한 번에 한 레이어만 선택됩니다.</p>
 
-    <label class="layer-toggle" for="safety-layer">
-        <input id="safety-layer" type="checkbox" checked disabled>
-        지역별 치안 주제도
-    </label>
-    <label class="layer-toggle" for="airbnb-layer">
-        <input id="airbnb-layer" type="checkbox" checked disabled>
-        Airbnb 숙소
-    </label>
+    <fieldset class="layer-list">
+        <legend>표시할 주제도</legend>
+        <label class="layer-toggle" for="theme-accommodation">
+            <input id="theme-accommodation" type="checkbox" data-theme="accommodation" disabled>
+            숙소 중위 총가격
+        </label>
+        <label class="layer-toggle" for="theme-safety">
+            <input id="theme-safety" type="checkbox" data-theme="safety" checked disabled>
+            치안사건률
+        </label>
+        <label class="layer-toggle" for="theme-population">
+            <input id="theme-population" type="checkbox" data-theme="population" disabled>
+            인구밀도
+        </label>
+        <label class="layer-toggle" for="theme-greenspace">
+            <input id="theme-greenspace" type="checkbox" data-theme="greenspace" disabled>
+            공개녹지 면적비율
+        </label>
+    </fieldset>
 
-    <div id="legend" class="legend" hidden>
-        <div class="legend-title"><span>범죄율 낮음</span><span>범죄율 높음</span></div>
-        <div class="legend-colors" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
-    </div>
-
-    <section id="listing-tools" class="listing-tools" hidden aria-label="숙소 가격 정렬">
-        <label class="field-label" for="price-sort">가격 정렬</label>
-        <select id="price-sort" class="sort-select" aria-label="가격 정렬">
-            <option value="asc">가격 낮은 순</option>
-            <option value="desc">가격 높은 순</option>
-        </select>
-        <div id="result-summary" class="result-summary" aria-live="polite"></div>
-        <ul id="listing-results" class="listing-results"></ul>
+    <section id="legend" class="legend" aria-live="polite" hidden>
+        <h2 id="legend-heading" class="legend-heading"></h2>
+        <div id="legend-items" class="legend-items"></div>
+        <p id="legend-note" class="legend-note"></p>
     </section>
 
-    <div id="status" class="status" role="status" aria-live="polite">지도 데이터를 불러오는 중…</div>
+    <div id="status" class="status" role="status" aria-live="polite">주제도 데이터를 불러오는 중…</div>
     <div class="attribution">
-        Metropolitan Police · ONS · GLA · Kaggle Airbnb dataset<br>
-        Contains National Statistics and OS data © Crown copyright and database right 2024
+        GLA · data.police.uk · ONS · OS Open Greenspace · Kaggle Airbnb<br>
+        Contains National Statistics and OS data © Crown copyright and database right
     </div>
 </aside>
-<div id="map" aria-label="런던 치안 수준과 Airbnb 숙소 지도"></div>
+<div id="map" aria-label="런던 숙소, 치안, 인구, 녹지 주제도"></div>
 
 <script th:inline="javascript">
-    const SAFETY_COLORS = ["#9ca3af", "#2d9d78", "#92c96b", "#f1cf63", "#ef8a51", "#d9534f"];
-    const PRICE_FORMAT = new Intl.NumberFormat("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const ROOM_LABELS = {
-        "Entire home/apt": "집 전체",
-        "Private room": "개인실",
-        "Shared room": "다인실",
-        "Hotel room": "호텔 객실"
+    const MISSING_COLOR = "#bdbdbd";
+    const THEMES = {
+        accommodation: {
+            heading: "Airbnb 숙소 중위 총가격",
+            valueProperty: "accommodationMedianPrice",
+            levelProperty: "accommodationLevel",
+            colors: ["#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c"],
+            decimals: 2,
+            suffix: "",
+            note: "표본 5건 이상 LSOA만 표시 · 원본 스냅샷 시점 미상"
+        },
+        safety: {
+            heading: "연간 인구 1,000명당 치안사건",
+            valueProperty: "safetyIncidentRate",
+            levelProperty: "safetyLevel",
+            colors: ["#1a9850", "#91cf60", "#ffffbf", "#fc8d59", "#d73027"],
+            decimals: 2,
+            suffix: "건",
+            note: "data.police.uk 2024년 12개월 · MPS와 City of London Police"
+        },
+        population: {
+            heading: "인구밀도",
+            valueProperty: "populationDensity",
+            levelProperty: "populationLevel",
+            colors: ["#ffffb2", "#fecc5c", "#fd8d3c", "#f03b20", "#bd0026"],
+            decimals: 0,
+            suffix: "명/km²",
+            note: "ONS 2024년 중간연도 인구 ÷ LSOA 면적"
+        },
+        greenspace: {
+            heading: "공개녹지 면적비율",
+            valueProperty: "greenspacePercent",
+            levelProperty: "greenspaceLevel",
+            colors: ["#edf8e9", "#bae4b3", "#74c476", "#31a354", "#006d2c"],
+            decimals: 2,
+            suffix: "%",
+            note: "OS Open Greenspace 2026-04 · 일반화 경계에 따른 근사 면적"
+        }
     };
 
     async function initMap() {
@@ -165,319 +152,129 @@
             ]
         });
 
-        const safetyCheckbox = document.getElementById("safety-layer");
-        const airbnbCheckbox = document.getElementById("airbnb-layer");
+        const checkboxes = [...document.querySelectorAll("[data-theme]")];
         const legend = document.getElementById("legend");
-        const listingTools = document.getElementById("listing-tools");
-        const sortSelect = document.getElementById("price-sort");
-        const resultSummary = document.getElementById("result-summary");
-        const resultList = document.getElementById("listing-results");
+        const legendHeading = document.getElementById("legend-heading");
+        const legendItems = document.getElementById("legend-items");
+        const legendNote = document.getElementById("legend-note");
         const status = document.getElementById("status");
-        const infoWindow = new google.maps.InfoWindow();
-        let listings = [];
-        let safetyReady = false;
-        let safetyResumeTimer = null;
+        let metadata;
+        let activeTheme = "safety";
+        let resumeTimer;
 
-        class ListingCanvasLayer extends google.maps.OverlayView {
-            constructor() {
-                super();
-                this.listings = [];
-                this.renderedPoints = [];
-                this.canvas = null;
-                this.renderTimer = null;
-            }
-
-            onAdd() {
-                this.canvas = document.createElement("canvas");
-                this.canvas.style.position = "absolute";
-                this.canvas.style.pointerEvents = "none";
-                this.canvas.style.zIndex = "3";
-                this.getPanes().overlayMouseTarget.appendChild(this.canvas);
-            }
-
-            onRemove() {
-                clearTimeout(this.renderTimer);
-                this.canvas?.remove();
-                this.canvas = null;
-                this.renderedPoints = [];
-            }
-
-            setListings(nextListings) {
-                this.listings = nextListings.map((listing) => ({
-                    ...listing,
-                    latLng: new google.maps.LatLng(listing.latitude, listing.longitude)
-                }));
-                this.draw();
-            }
-
-            draw() {
-                clearTimeout(this.renderTimer);
-                this.renderTimer = setTimeout(() => this.render(), 80);
-            }
-
-            render() {
-                if (!this.canvas || !this.getMap()) return;
-                const bounds = this.getMap().getBounds();
-                const projection = this.getProjection();
-                if (!bounds || !projection) return;
-
-                const padding = 20;
-                const northEast = projection.fromLatLngToDivPixel(bounds.getNorthEast());
-                const southWest = projection.fromLatLngToDivPixel(bounds.getSouthWest());
-                const left = Math.floor(southWest.x) - padding;
-                const top = Math.floor(northEast.y) - padding;
-                const width = Math.max(1, Math.ceil(northEast.x - southWest.x) + padding * 2);
-                const height = Math.max(1, Math.ceil(southWest.y - northEast.y) + padding * 2);
-                const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-
-                this.canvas.style.left = `${left}px`;
-                this.canvas.style.top = `${top}px`;
-                this.canvas.style.width = `${width}px`;
-                this.canvas.style.height = `${height}px`;
-                this.canvas.width = Math.ceil(width * pixelRatio);
-                this.canvas.height = Math.ceil(height * pixelRatio);
-
-                const context = this.canvas.getContext("2d");
-                context.scale(pixelRatio, pixelRatio);
-                context.clearRect(0, 0, width, height);
-
-                const north = bounds.getNorthEast().lat();
-                const east = bounds.getNorthEast().lng();
-                const south = bounds.getSouthWest().lat();
-                const west = bounds.getSouthWest().lng();
-                const zoom = this.getMap().getZoom() || 10;
-                const cellSize = zoom <= 10 ? 18 : zoom <= 12 ? 14 : 10;
-                const clusters = new Map();
-
-                for (const listing of this.listings) {
-                    if (listing.latitude < south || listing.latitude > north ||
-                        listing.longitude < west || listing.longitude > east) continue;
-
-                    const point = projection.fromLatLngToDivPixel(listing.latLng);
-                    const x = point.x - left;
-                    const y = point.y - top;
-                    const key = `${Math.floor(x / cellSize)}:${Math.floor(y / cellSize)}`;
-                    const cluster = clusters.get(key);
-                    if (cluster) {
-                        cluster.count += 1;
-                        cluster.xTotal += x;
-                        cluster.yTotal += y;
-                        cluster.latTotal += listing.latitude;
-                        cluster.lngTotal += listing.longitude;
-                    } else {
-                        clusters.set(key, {
-                            count: 1,
-                            xTotal: x,
-                            yTotal: y,
-                            latTotal: listing.latitude,
-                            lngTotal: listing.longitude,
-                            listing
-                        });
-                    }
-                }
-
-                this.renderedPoints = [];
-                for (const cluster of clusters.values()) {
-                    const x = cluster.xTotal / cluster.count;
-                    const y = cluster.yTotal / cluster.count;
-                    const radius = cluster.count === 1 ? 4 : Math.min(15, 6 + Math.log2(cluster.count));
-                    context.beginPath();
-                    context.arc(x, y, radius, 0, Math.PI * 2);
-                    context.fillStyle = cluster.count === 1 ? "rgba(227, 79, 99, 0.9)" : "rgba(196, 55, 78, 0.92)";
-                    context.fill();
-                    context.lineWidth = 1.5;
-                    context.strokeStyle = "rgba(255, 255, 255, 0.96)";
-                    context.stroke();
-
-                    if (cluster.count > 1) {
-                        context.fillStyle = "#ffffff";
-                        context.font = "bold 10px Arial, sans-serif";
-                        context.textAlign = "center";
-                        context.textBaseline = "middle";
-                        context.fillText(cluster.count > 99 ? "99+" : String(cluster.count), x, y);
-                    }
-
-                    this.renderedPoints.push({
-                        x: x + left,
-                        y: y + top,
-                        radius: radius + 5,
-                        count: cluster.count,
-                        latitude: cluster.latTotal / cluster.count,
-                        longitude: cluster.lngTotal / cluster.count,
-                        listing: cluster.listing
-                    });
-                }
-            }
-
-            handleClick(latLng) {
-                if (!this.getMap()) return false;
-                const clickPoint = this.getProjection().fromLatLngToDivPixel(latLng);
-                let closest = null;
-                let closestDistance = Infinity;
-                for (const point of this.renderedPoints) {
-                    const distance = Math.hypot(point.x - clickPoint.x, point.y - clickPoint.y);
-                    if (distance <= point.radius && distance < closestDistance) {
-                        closest = point;
-                        closestDistance = distance;
-                    }
-                }
-                if (!closest) return false;
-
-                if (closest.count > 1) {
-                    this.getMap().panTo({ lat: closest.latitude, lng: closest.longitude });
-                    this.getMap().setZoom(Math.min((this.getMap().getZoom() || 10) + 2, 18));
-                } else {
-                    showListing(closest.listing);
-                }
-                return true;
-            }
-        }
-
-        const listingLayer = new ListingCanvasLayer();
-        listingLayer.setMap(map);
-
-        map.data.setStyle((feature) => ({
-            fillColor: SAFETY_COLORS[feature.getProperty("level")] || SAFETY_COLORS[0],
-            fillOpacity: feature.getProperty("level") === 0 ? 0.28 : 0.58,
-            strokeColor: "#ffffff",
-            strokeOpacity: 0.72,
-            strokeWeight: 0.45,
-            clickable: false
-        }));
-
-        const safetyPromise = fetch("/data/london-lsoa-safety.json")
-            .then((response) => {
-                if (!response.ok) throw new Error(`Safety HTTP ${response.status}`);
-                return response.json();
-            })
-            .then((geojson) => {
-                map.data.addGeoJson(geojson);
-                safetyReady = true;
-                safetyCheckbox.disabled = false;
-                legend.hidden = false;
-            });
-
-        const listingPromise = fetch("/data/london-airbnb-listings.json")
-            .then((response) => {
-                if (!response.ok) throw new Error(`Airbnb HTTP ${response.status}`);
-                return response.json();
-            })
-            .then((payload) => {
-                listings = payload.listings;
-                listingLayer.setListings(listings);
-                airbnbCheckbox.disabled = false;
-                listingTools.hidden = false;
-                renderResults();
-            });
-
-        function sortedListings() {
-            const direction = sortSelect.value === "desc" ? -1 : 1;
-            return [...listings].sort((a, b) => direction * (a.priceTotal - b.priceTotal) || a.id.localeCompare(b.id));
-        }
-
-        function renderResults() {
-            const results = sortedListings();
-            const shown = results.slice(0, 50);
-            resultSummary.textContent = `${results.length.toLocaleString("ko-KR")}개 중 ${shown.length}개 표시`;
-            resultList.replaceChildren();
-
-            for (const listing of shown) {
-                const item = document.createElement("li");
-                const button = document.createElement("button");
-                const title = document.createElement("span");
-                const price = document.createElement("span");
-                const meta = document.createElement("span");
-                button.type = "button";
-                button.className = "listing-result";
-                title.className = "listing-title";
-                price.className = "listing-price";
-                meta.className = "listing-meta";
-                title.textContent = ROOM_LABELS[listing.roomType] || listing.roomType;
-                price.textContent = PRICE_FORMAT.format(listing.priceTotal);
-                meta.textContent = `${listing.dayType === "weekday" ? "주중" : "주말"} · 최대 ${listing.maxGuests}명 · 침실 ${listing.bedrooms}개`;
-                button.append(title, price, meta);
-                button.addEventListener("click", () => showListing(listing));
-                item.append(button);
-                resultList.append(item);
-            }
-        }
-
-        function createInfoCard(listing) {
-            const card = document.createElement("div");
-            const title = document.createElement("h2");
-            const price = document.createElement("div");
-            card.className = "info-card";
-            title.textContent = ROOM_LABELS[listing.roomType] || listing.roomType;
-            price.className = "info-price";
-            price.textContent = `총가격 ${PRICE_FORMAT.format(listing.priceTotal)}`;
-            card.append(title, price);
-            const details = [
-                `${listing.dayType === "weekday" ? "주중" : "주말"} · 최대 ${listing.maxGuests}명 · 침실 ${listing.bedrooms}개`,
-                `청결도 ${listing.cleanlinessScore} · 만족도 ${listing.satisfactionScore}`,
-                `도심 ${listing.distanceCityCenter}km · 지하철 ${listing.distanceMetro}km`,
-                listing.isSuperhost ? "슈퍼호스트" : "일반 호스트"
-            ];
-            for (const detail of details) {
-                const row = document.createElement("div");
-                row.className = "info-row";
-                row.textContent = detail;
-                card.append(row);
-            }
-            return card;
-        }
-
-        function showListing(listing) {
-            const position = { lat: listing.latitude, lng: listing.longitude };
-            infoWindow.setContent(createInfoCard(listing));
-            infoWindow.setPosition(position);
-            infoWindow.open({ map });
-            map.panTo(position);
-            if (map.getZoom() < 14) map.setZoom(14);
-        }
-
-        map.addListener("click", (event) => {
-            listingLayer.handleClick(event.latLng);
+        const formatValue = (value, config) => Number(value).toLocaleString("ko-KR", {
+            minimumFractionDigits: config.decimals,
+            maximumFractionDigits: config.decimals
         });
 
-        function suspendSafetyRendering() {
-            if (!safetyReady || !safetyCheckbox.checked) return;
-            clearTimeout(safetyResumeTimer);
+        function intervalLabels(themeKey) {
+            const config = THEMES[themeKey];
+            const breaks = metadata.indicators[themeKey].breaks;
+            if (themeKey === "greenspace") {
+                return [
+                    `0${config.suffix}`,
+                    `0 초과 – ${formatValue(breaks[0], config)}${config.suffix}`,
+                    `${formatValue(breaks[0], config)} 초과 – ${formatValue(breaks[1], config)}${config.suffix}`,
+                    `${formatValue(breaks[1], config)} 초과 – ${formatValue(breaks[2], config)}${config.suffix}`,
+                    `${formatValue(breaks[2], config)}${config.suffix} 초과`
+                ];
+            }
+            return [
+                `${formatValue(breaks[0], config)}${config.suffix} 이하`,
+                `${formatValue(breaks[0], config)} 초과 – ${formatValue(breaks[1], config)}${config.suffix}`,
+                `${formatValue(breaks[1], config)} 초과 – ${formatValue(breaks[2], config)}${config.suffix}`,
+                `${formatValue(breaks[2], config)} 초과 – ${formatValue(breaks[3], config)}${config.suffix}`,
+                `${formatValue(breaks[3], config)}${config.suffix} 초과`
+            ];
+        }
+
+        function renderLegend(themeKey) {
+            const config = THEMES[themeKey];
+            const labels = intervalLabels(themeKey);
+            legendHeading.textContent = config.heading;
+            legendNote.textContent = `${config.note} · 회색은 결측`;
+            legendItems.replaceChildren();
+            labels.forEach((label, index) => {
+                const item = document.createElement("div");
+                const swatch = document.createElement("span");
+                const text = document.createElement("span");
+                item.className = "legend-item";
+                swatch.className = "legend-swatch";
+                swatch.style.backgroundColor = config.colors[index];
+                text.textContent = label;
+                item.append(swatch, text);
+                legendItems.append(item);
+            });
+            legend.hidden = false;
+        }
+
+        function applyTheme(themeKey) {
+            const config = THEMES[themeKey];
+            map.data.setStyle((feature) => {
+                const level = feature.getProperty(config.levelProperty);
+                return {
+                    fillColor: level ? config.colors[level - 1] : MISSING_COLOR,
+                    fillOpacity: 0.66,
+                    strokeColor: "#ffffff",
+                    strokeOpacity: 0.75,
+                    strokeWeight: 0.45,
+                    clickable: false
+                };
+            });
+            map.data.setMap(map);
+            renderLegend(themeKey);
+        }
+
+        function selectTheme(themeKey) {
+            checkboxes.forEach((checkbox) => {
+                checkbox.checked = checkbox.dataset.theme === themeKey;
+            });
+            activeTheme = themeKey;
+            applyTheme(themeKey);
+        }
+
+        checkboxes.forEach((checkbox) => {
+            checkbox.addEventListener("change", () => {
+                if (checkbox.checked) {
+                    selectTheme(checkbox.dataset.theme);
+                } else if (activeTheme === checkbox.dataset.theme) {
+                    activeTheme = null;
+                    map.data.setMap(null);
+                    legend.hidden = true;
+                }
+            });
+        });
+
+        const response = await fetch("/data/london-lsoa-themes.json");
+        if (!response.ok) throw new Error(`Theme data HTTP ${response.status}`);
+        const geojson = await response.json();
+        metadata = geojson.metadata;
+        map.data.addGeoJson(geojson);
+        checkboxes.forEach((checkbox) => checkbox.disabled = false);
+        selectTheme("safety");
+        status.hidden = true;
+
+        function suspendRendering() {
+            if (!activeTheme) return;
+            clearTimeout(resumeTimer);
             map.data.setMap(null);
         }
-
-        function resumeSafetyRendering() {
-            clearTimeout(safetyResumeTimer);
-            safetyResumeTimer = setTimeout(() => {
-                if (safetyReady && safetyCheckbox.checked) map.data.setMap(map);
+        function resumeRendering() {
+            clearTimeout(resumeTimer);
+            resumeTimer = setTimeout(() => {
+                if (activeTheme) map.data.setMap(map);
             }, 100);
         }
-
-        map.addListener("zoom_changed", suspendSafetyRendering);
-        map.addListener("dragstart", suspendSafetyRendering);
-        map.addListener("idle", resumeSafetyRendering);
-
-        safetyCheckbox.addEventListener("change", () => {
-            map.data.setMap(safetyCheckbox.checked ? map : null);
-            legend.hidden = !safetyCheckbox.checked;
-        });
-
-        airbnbCheckbox.addEventListener("change", () => {
-            listingLayer.setMap(airbnbCheckbox.checked ? map : null);
-            sortSelect.disabled = !airbnbCheckbox.checked;
-            if (!airbnbCheckbox.checked) infoWindow.close();
-        });
-
-        sortSelect.addEventListener("change", renderResults);
-
-        const results = await Promise.allSettled([safetyPromise, listingPromise]);
-        const failures = results.filter((result) => result.status === "rejected");
-        if (failures.length === 0) {
-            status.hidden = true;
-        } else {
-            status.textContent = "일부 지도 데이터를 불러오지 못했습니다.";
-            failures.forEach((failure) => console.error(failure.reason));
-        }
+        map.addListener("zoom_changed", suspendRendering);
+        map.addListener("dragstart", suspendRendering);
+        map.addListener("idle", resumeRendering);
     }
+
+    window.gm_authFailure = () => {
+        const status = document.getElementById("status");
+        status.hidden = false;
+        status.textContent = "Google Maps API 키를 확인해 주세요.";
+    };
 </script>
 <script th:src="|https://maps.googleapis.com/maps/api/js?key=${mapsKey}&callback=initMap|" async defer></script>
 </body>
