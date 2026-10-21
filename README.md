@@ -21,6 +21,10 @@ google:
 
 `run.sh`는 주제도만 확인할 수 있도록 `map-only` 프로필로 실행되며 PostgreSQL/PostGIS 연결을 요구하지 않습니다. 전체 백엔드를 실행할 때는 기존 DB 환경변수와 기본 프로필을 사용합니다.
 
+## 배포
+
+GCP VM에 docker compose로 배포합니다. PR은 GitHub Actions가 빌드·테스트하고, main에 머지되면 자동으로 VM에 배포됩니다. 절차는 [docs/deploy.md](docs/deploy.md)를 참고하세요.
+
 ## 주제도 지표
 
 모든 값은 하나의 GeoJSON 파일 `london-lsoa-themes.json`에 저장해 경계를 중복 전송하지 않습니다.

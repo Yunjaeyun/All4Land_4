@@ -1,0 +1,24 @@
+# 운영(VM) 전용 (e2-micro, RAM 1GB 기준). docker-compose.yml 위에 덮어써서 backend를 추가한다.
+# VM의 .env에 COMPOSE_FILE=docker-compose.yml:docker-compose.prod.yml 을 넣으면
+# `docker compose up -d --build` 만으로 둘 다 적용된다.
+services:
+  db:
+    restart: unless-stopped
+
+  backend:
+    # 평소에는 GitHub Actions가 GHCR에 올린 이미지를 받아서 쓴다 (IMAGE_TAG로 커밋 지정 가능).
+    # `docker compose up -d --build`를 쓰면 VM에서 직접 빌드한다 (느림, 비상용)
+    image: ghcr.io/yunjaeyun/all4land_4:${IMAGE_TAG:-latest}
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
+    mem_limit: 512m
+    ports:
+      - "80:8080"
