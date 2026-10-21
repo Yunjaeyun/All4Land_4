@@ -23,7 +23,7 @@ google:
 
 ## 배포
 
-GCP VM에 docker compose로 배포합니다. PR은 GitHub Actions가 빌드·테스트하고, main에 머지되면 자동으로 VM에 배포됩니다. 절차는 [docs/deploy.md](docs/deploy.md)를 참고하세요.
+GCP VM에 docker compose로 배포합니다. main에 머지되면 GitHub Actions가 자동으로 VM에 배포합니다. 절차는 [docs/deploy.md](docs/deploy.md)를 참고하세요.
 
 ## 주제도 지표
 

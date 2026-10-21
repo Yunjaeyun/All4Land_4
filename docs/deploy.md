@@ -111,12 +111,7 @@ docker compose logs -f backend   # "Started AllForLandSideProjApplication"이 �
 
 ## 7. 자동 배포 (CI/CD)
 
-GitHub Actions가 두 가지를 합니다.
-
-| 워크플로 | 언제 | 하는 일 |
-|---|---|---|
-| `ci.yml` | PR 생성·업데이트 | `./gradlew build` (테스트 포함) |
-| `deploy.yml` | main에 push(머지) | 테스트 → 이미지 빌드 후 GHCR(`ghcr.io/yunjaeyun/all4land_4`)에 push → VM에 SSH 접속해 `docker compose pull && up -d` |
+main에 push(머지)되면 GitHub Actions의 `deploy.yml`이 이미지 빌드 후 GHCR(`ghcr.io/yunjaeyun/all4land_4`)에 push → VM에 SSH 접속해 `docker compose pull && up -d`를 실행합니다. 별도 테스트 단계는 없고, 컴파일이 깨지면 이미지 빌드에서 멈춥니다.
 
 VM은 이미지를 받아서 실행만 하므로 빌드로 메모리가 부족해질 일이 없습니다. DB 컨테이너와 `pgdata` 볼륨은 건드리지 않습니다.
 

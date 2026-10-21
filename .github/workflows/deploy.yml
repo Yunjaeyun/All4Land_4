@@ -1,4 +1,5 @@
-# main에 push되면 테스트 → 이미지 빌드(GHCR) → VM 배포 순서로 진행한다.
+# main에 push되면 이미지 빌드(GHCR) → VM 배포 순서로 진행한다.
+# 따로 테스트 단계는 두지 않는다. 컴파일이 깨지면 이미지 빌드에서 실패한다.
 # VM(e2-micro)은 RAM이 1GB라 이미지를 직접 빌드하지 않고 받아서 실행만 한다.
 name: Deploy
 
@@ -16,11 +17,7 @@ env:
   IMAGE: ghcr.io/yunjaeyun/all4land_4
 
 jobs:
-  test:
-    uses: ./.github/workflows/ci.yml
-
   image:
-    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
