@@ -109,12 +109,65 @@ docker compose logs -f backend   # "Started AllForLandSideProjApplication"이 �
 
 **예산 알림**: 콘솔 → 결제 → Budgets & caps에서 월 5,000원 예산을 만들고 50%, 90%, 100% 알림을 켭니다.
 
-## 업데이트 배포
+## 7. 자동 배포 (CI/CD)
 
-main에 머지된 뒤 VM에서:
+GitHub Actions가 두 가지를 합니다.
+
+| 워크플로 | 언제 | 하는 일 |
+|---|---|---|
+| `ci.yml` | PR 생성·업데이트 | `./gradlew build` (테스트 포함) |
+| `deploy.yml` | main에 push(머지) | 테스트 → 이미지 빌드 후 GHCR(`ghcr.io/yunjaeyun/all4land_4`)에 push → VM에 SSH 접속해 `docker compose pull && up -d` |
+
+VM은 이미지를 받아서 실행만 하므로 빌드로 메모리가 부족해질 일이 없습니다. DB 컨테이너와 `pgdata` 볼륨은 건드리지 않습니다.
+
+### 처음 한 번만 설정
+
+**1) 배포용 SSH 키 만들기** (Cloud Shell에서)
 
 ```bash
-cd All4Land_4
+ssh-keygen -t ed25519 -f ~/deploy_key -N "" -C github-actions
+gcloud compute ssh all4land --zone=us-central1-a \
+  --command 'cat >> ~/.ssh/authorized_keys' < ~/deploy_key.pub
+cat ~/deploy_key   # 개인키 전체(BEGIN~END 줄 포함)를 복사
+```
+
+복사한 뒤에는 `rm ~/deploy_key ~/deploy_key.pub`로 지웁니다.
+
+SSH(22번 포트) 방화벽 규칙이 있는지도 확인합니다. 기본 네트워크에는 `default-allow-ssh`가 있습니다.
+
+```bash
+gcloud compute firewall-rules list --filter="allowed[].ports:22"
+```
+
+**2) GitHub Secrets 등록**: 레포 → Settings → Secrets and variables → Actions → New repository secret. 레포 관리자 권한이 필요합니다.
+
+| 이름 | 값 |
+|---|---|
+| `VM_HOST` | VM 외부 IP |
+| `VM_USER` | VM 사용자 이름 (Cloud Shell 프롬프트의 `@` 앞부분) |
+| `VM_SSH_KEY` | 1)에서 복사한 개인키 |
+
+**3) VM을 main 브랜치로**: VM에서 다른 브랜치를 쓰고 있었다면 `cd ~/All4Land_4 && git checkout main && git pull`을 실행합니다. 배포 스크립트는 `~/All4Land_4`에서 main을 기준으로 동작합니다.
+
+**4) GHCR 패키지 공개**: 첫 배포의 `image` 단계가 끝나면 GitHub 프로필 → Packages → `all4land_4` → Package settings → Change visibility → **Public**으로 바꿉니다. 비공개로 두면 VM이 이미지를 받지 못해 `deploy` 단계가 실패합니다. 바꾼 뒤 Actions 탭에서 실패한 실행을 **Re-run**합니다.
+
+### 롤백
+
+GHCR에는 커밋 SHA 태그도 함께 올라갑니다. VM에서 이전 커밋 이미지로 되돌리려면:
+
+```bash
+cd ~/All4Land_4
+IMAGE_TAG=<이전 커밋 SHA 전체> docker compose up -d
+```
+
+## 업데이트 배포
+
+평소에는 PR을 main에 머지하면 자동으로 배포됩니다. Actions 탭에서 진행 상황을 볼 수 있고, Deploy 워크플로의 **Run workflow** 버튼으로 수동 실행도 됩니다.
+
+GitHub Actions를 쓸 수 없을 때는 VM에서 직접 빌드합니다 (5~10분):
+
+```bash
+cd ~/All4Land_4
 git pull
 docker compose up -d --build
 ```

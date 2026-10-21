@@ -8,7 +8,7 @@ COPY gradle gradle
 RUN chmod +x gradlew && ./gradlew dependencies --no-daemon > /dev/null
 
 COPY src src
-# contextLoads 테스트는 DB가 필요하므로 이미지 빌드에서는 제외
+# 테스트는 CI에서 따로 돌리므로 이미지 빌드에서는 제외
 RUN ./gradlew bootJar -x test --no-daemon
 
 # ---- run ----
