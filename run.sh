@@ -27,4 +27,4 @@ export JAVA_HOME
 export PATH="$JAVA_HOME/bin:$PATH"
 export GRADLE_USER_HOME="${GRADLE_USER_HOME:-$PROJECT_DIR/.gradle}"
 
-exec "$PROJECT_DIR/gradlew" bootRun
+exec "$PROJECT_DIR/gradlew" bootRun --args='--spring.profiles.active=map-only'
