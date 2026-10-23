@@ -106,7 +106,7 @@
 <script th:src="@{/js/custom-layer/panel.js}"></script>
 <script th:src="@{/js/custom-layer/draw.js}"></script>
 
-<script th:inline="javascript">
+<script>
     const MISSING_COLOR = "#bdbdbd";
     const THEMES = {
         accommodation: {
@@ -173,10 +173,12 @@
         let activeTheme = "safety";
         let resumeTimer;
 
-        const formatValue = (value, config) => Number(value).toLocaleString("ko-KR", {
-            minimumFractionDigits: config.decimals,
-            maximumFractionDigits: config.decimals
-        });
+        function formatValue(value, config) {
+            return Number(value).toLocaleString("ko-KR", {
+                minimumFractionDigits: config.decimals,
+                maximumFractionDigits: config.decimals
+            });
+        }
 
         function intervalLabels(themeKey) {
             const config = THEMES[themeKey];
@@ -256,10 +258,14 @@
             });
         });
 
-        try {
+        async function loadThemes() {
             const response = await fetch("/data/london-lsoa-themes.json");
             if (!response.ok) throw new Error(`Theme data HTTP ${response.status}`);
-            const geojson = await response.json();
+            return response.json();
+        }
+
+        try {
+            const geojson = await loadThemes();
             metadata = geojson.metadata;
             map.data.addGeoJson(geojson);
             checkboxes.forEach((checkbox) => checkbox.disabled = false);

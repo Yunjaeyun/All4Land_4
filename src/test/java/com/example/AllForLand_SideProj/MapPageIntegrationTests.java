@@ -21,8 +21,10 @@ class MapPageIntegrationTests {
 
     private HttpResponse<String> get(String path) throws Exception {
         var uri = URI.create("http://localhost:" + environment.getProperty("local.server.port") + path);
-        return HttpClient.newHttpClient().send(HttpRequest.newBuilder(uri).GET().build(),
-                HttpResponse.BodyHandlers.ofString());
+        try (var client = HttpClient.newHttpClient()) {
+            return client.send(HttpRequest.newBuilder(uri).GET().build(),
+                    HttpResponse.BodyHandlers.ofString());
+        }
     }
 
     @Test
