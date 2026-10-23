@@ -1,0 +1,34 @@
+.map-panel[hidden], .custom-layer-panel [hidden] { display: none !important; }
+.custom-layer-panel { overflow-y: auto; }
+.layer-tabs { display: flex; margin: 12px 0 16px; padding: 3px; border-radius: 7px; background: #eef1ef; }
+.layer-tabs button { flex: 1; padding: 9px; border: 0; border-radius: 5px; background: transparent; color: #596d63; cursor: pointer; }
+.layer-tabs button[aria-selected="true"] { background: #fff; color: #20352e; font-weight: 700; box-shadow: 0 1px 4px #0001; }
+.custom-layer-panel label { display: block; margin: 12px 0 6px; color: #50635a; font-size: 12px; }
+.custom-layer-panel input, .custom-layer-panel select { box-sizing: border-box; width: 100%; min-width: 0; padding: 9px; border: 1px solid #d5ddd8; border-radius: 6px; background: #fff; color: #20352e; font: inherit; font-size: 13px; }
+.layer-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.layer-hint { color: #697b71; font-size: 11px; line-height: 1.6; }
+#layer-photo-preview { display: block; width: 100%; max-height: 150px; object-fit: contain; margin-top: 10px; border-radius: 6px; }
+.layer-submit { width: 100%; margin-top: 14px; padding: 11px; border: 0; border-radius: 6px; background: #247b65; color: #fff; }
+.layer-submit:disabled { background: #e4e9e6; color: #697b71; cursor: not-allowed; }
+.custom-layer-panel :focus-visible { outline: 2px solid #247b65; outline-offset: 2px; }
+.draw-tools { min-width: 0; margin: 16px 0; padding: 12px; border: 1px solid #d5ddd8; border-radius: 8px; }
+.draw-tools legend { padding: 0 5px; color: #50635a; font-size: 12px; }
+.draw-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+.draw-tools button, #add-coordinate-marker, .draw-layers button { padding: 8px 6px; border: 1px solid #d5ddd8; border-radius: 5px; background: #fff; color: #20352e; font-size: 12px; cursor: pointer; }
+.draw-modes button[aria-pressed="true"] { border-color: #247b65; background: #e8f3ee; color: #17624d; font-weight: 700; }
+.draw-tools button:disabled { color: #99a49e; background: #f4f6f5; cursor: not-allowed; }
+.draw-actions { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+.custom-layer-panel input[type="color"] { height: 36px; padding: 3px; }
+#add-coordinate-marker { margin-top: 8px; width: 100%; }
+.draw-list-title { margin: 18px 0 8px; font-size: 13px; color: #50635a; }
+.draw-layers { padding: 0; margin: 0; list-style: none; }
+.draw-layers li + li { margin-top: 6px; }
+.draw-layers button { width: 100%; text-align: left; overflow-wrap: anywhere; }
+.layer-row-actions { display: flex; gap: 5px; margin-top: 5px; }
+.draw-layers .layer-row-actions button { width: auto; flex: 1; font-size: 11px; text-align: center; }
+.draw-layers li { padding-bottom: 10px; border-bottom: 1px solid #e2e9e5; }
+.layer-secondary { width: 100%; margin-top: 8px; padding: 9px; border: 1px solid #d5ddd8; border-radius: 6px; background: white; color: #50635a; cursor: pointer; }
+.layer-image { width: 100%; max-height: 180px; object-fit: contain; border-radius: 6px; }
+.custom-layer-panel .layer-check { display: flex; align-items: center; gap: 8px; }
+.custom-layer-panel .layer-check input { width: auto; }
+#layer-edit-form { margin-top: 14px; padding: 12px; border: 1px solid #cbded2; border-radius: 8px; background: #f7faf8; }
