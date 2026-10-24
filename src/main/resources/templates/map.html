@@ -25,6 +25,8 @@
             border-radius: 12px;
             background: rgba(255, 255, 255, 0.97);
             box-shadow: 0 4px 18px rgba(29, 45, 61, 0.18);
+            max-height: calc(100vh - 32px);
+            overflow-y: auto;
         }
 
         h1 { margin: 0 0 5px; color: #182733; font-size: 18px; }
@@ -57,6 +59,35 @@
         .legend-note { margin: 9px 0 0; color: #78858e; font-size: 10px; line-height: 1.45; }
         .status, .attribution { margin-top: 10px; color: #78858e; font-size: 10px; line-height: 1.45; }
         [hidden] { display: none !important; }
+
+        .restaurant-section { margin-top: 13px; border-top: 1px solid #e3e8ec; padding-top: 12px; }
+        .restaurant-row { display: flex; gap: 7px; }
+        .restaurant-row .layer-toggle { flex: 1; }
+        .button {
+            min-height: 40px;
+            padding: 0 13px;
+            border: 1px solid #345f82;
+            border-radius: 8px;
+            background: #345f82;
+            color: #ffffff;
+            cursor: pointer;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .button.secondary { border-color: #cfd8df; background: #ffffff; color: #40505c; }
+        .button:disabled { cursor: not-allowed; opacity: 0.5; }
+        .restaurant-hint { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 9px 0 0; color: #345f82; font-size: 12px; font-weight: 700; }
+        .restaurant-hint .button { min-height: 30px; }
+        .restaurant-form { display: grid; gap: 8px; margin-top: 10px; }
+        .restaurant-form label { display: grid; gap: 3px; color: #40505c; font-size: 11px; font-weight: 700; }
+        .restaurant-form input { min-height: 34px; padding: 0 9px; border: 1px solid #cfd8df; border-radius: 6px; font: inherit; font-size: 13px; }
+        .restaurant-form .coords { margin: 0; color: #78858e; font-size: 11px; }
+        .restaurant-form .actions { display: flex; justify-content: flex-end; gap: 7px; }
+        .restaurant-message { margin: 8px 0 0; color: #2f7d4f; font-size: 11px; }
+        .restaurant-message.error { color: #c0392b; }
+        .restaurant-info { max-width: 240px; color: #1d2d39; font-size: 12px; line-height: 1.55; }
+        .restaurant-info strong { display: block; margin-bottom: 3px; font-size: 14px; }
 
         @media (max-width: 520px) {
             .map-panel { top: calc(var(--app-header-height) + 10px); left: 10px; width: calc(100vw - 20px); max-height: calc(100vh - var(--app-header-height) - 20px); overflow-y: auto; }
@@ -93,6 +124,40 @@
         <h2 id="legend-heading" class="legend-heading"></h2>
         <div id="legend-items" class="legend-items"></div>
         <p id="legend-note" class="legend-note"></p>
+    </section>
+
+    <section class="restaurant-section" aria-label="맛집">
+        <div class="restaurant-row">
+            <label class="layer-toggle" for="layer-restaurant">
+                <input id="layer-restaurant" type="checkbox" checked disabled>
+                맛집
+            </label>
+            <button id="restaurant-add" class="button" type="button" disabled>맛집 추가</button>
+        </div>
+        <p id="restaurant-hint" class="restaurant-hint" hidden>
+            지도에서 맛집 위치를 클릭하세요.
+            <button id="restaurant-pick-cancel" class="button secondary" type="button">취소</button>
+        </p>
+        <form id="restaurant-form" class="restaurant-form" hidden>
+            <p id="restaurant-coords" class="coords"></p>
+            <label>상호명 *
+                <input name="name" required maxlength="150" autocomplete="off">
+            </label>
+            <label>주소 *
+                <input name="address" required maxlength="255" autocomplete="off">
+            </label>
+            <label>음식 종류
+                <input name="cuisineType" maxlength="50" placeholder="예: Fish and Chips" autocomplete="off">
+            </label>
+            <label>평점 (0~5)
+                <input name="rating" type="number" min="0" max="5" step="0.1">
+            </label>
+            <div class="actions">
+                <button id="restaurant-form-cancel" class="button secondary" type="button">취소</button>
+                <button id="restaurant-submit" class="button" type="submit">저장</button>
+            </div>
+        </form>
+        <p id="restaurant-message" class="restaurant-message" role="status" aria-live="polite" hidden></p>
     </section>
 
     <div id="status" class="status" role="status" aria-live="polite">주제도 데이터를 불러오는 중…</div>
@@ -147,6 +212,157 @@
         }
     };
 
+    const SAFETY_LABELS = ["매우 안전", "안전", "보통", "주의", "위험"];
+
+    async function initRestaurants(map) {
+        const toggle = document.getElementById("layer-restaurant");
+        const addButton = document.getElementById("restaurant-add");
+        const hint = document.getElementById("restaurant-hint");
+        const form = document.getElementById("restaurant-form");
+        const coords = document.getElementById("restaurant-coords");
+        const submitButton = document.getElementById("restaurant-submit");
+        const message = document.getElementById("restaurant-message");
+        const infoWindow = new google.maps.InfoWindow();
+        const markers = [];
+        let picking = false;
+        let picked = null;
+        let draftMarker = null;
+
+        function showMessage(text, isError = false) {
+            message.textContent = text;
+            message.classList.toggle("error", isError);
+            message.hidden = false;
+        }
+
+        function infoContent(restaurant) {
+            const box = document.createElement("div");
+            const title = document.createElement("strong");
+            box.className = "restaurant-info";
+            title.textContent = restaurant.name;
+            box.append(title);
+            const detail = [restaurant.cuisineType, restaurant.rating != null ? `★ ${restaurant.rating}` : null]
+                .filter(Boolean).join(" · ");
+            [
+                restaurant.address,
+                detail,
+                `${restaurant.lsoaName} · 치안 ${restaurant.safetyLevel}등급 (${SAFETY_LABELS[restaurant.safetyLevel - 1]})`
+            ].filter(Boolean).forEach((line) => {
+                const row = document.createElement("div");
+                row.textContent = line;
+                box.append(row);
+            });
+            return box;
+        }
+
+        function addMarker(restaurant) {
+            const marker = new google.maps.Marker({
+                position: { lat: Number(restaurant.latitude), lng: Number(restaurant.longitude) },
+                map: toggle.checked ? map : null,
+                title: restaurant.name,
+                zIndex: 10,
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 7,
+                    fillColor: "#e8590c",
+                    fillOpacity: 1,
+                    strokeColor: "#ffffff",
+                    strokeWeight: 2
+                }
+            });
+            marker.addListener("click", () => {
+                infoWindow.setContent(infoContent(restaurant));
+                infoWindow.open({ map, anchor: marker });
+            });
+            markers.push(marker);
+        }
+
+        function resetAdding() {
+            picking = false;
+            picked = null;
+            hint.hidden = true;
+            form.hidden = true;
+            form.reset();
+            addButton.disabled = false;
+            map.setOptions({ draggableCursor: null });
+            if (draftMarker) draftMarker.setMap(null);
+            draftMarker = null;
+        }
+
+        toggle.addEventListener("change", () => {
+            markers.forEach((marker) => marker.setMap(toggle.checked ? map : null));
+            if (!toggle.checked) infoWindow.close();
+        });
+
+        addButton.addEventListener("click", () => {
+            picking = true;
+            addButton.disabled = true;
+            hint.hidden = false;
+            message.hidden = true;
+            map.setOptions({ draggableCursor: "crosshair" });
+        });
+        document.getElementById("restaurant-pick-cancel").addEventListener("click", resetAdding);
+        document.getElementById("restaurant-form-cancel").addEventListener("click", resetAdding);
+
+        // 위치 선택 중이거나 폼이 열려 있으면 클릭한 곳으로 위치를 옮긴다
+        map.addListener("click", (event) => {
+            if (!picking && form.hidden) return;
+            picking = false;
+            picked = event.latLng;
+            hint.hidden = true;
+            form.hidden = false;
+            map.setOptions({ draggableCursor: null });
+            coords.textContent = `위치 ${picked.lat().toFixed(6)}, ${picked.lng().toFixed(6)} · 지도를 다시 클릭하면 위치가 바뀝니다`;
+            if (!draftMarker) draftMarker = new google.maps.Marker({ map, zIndex: 20 });
+            draftMarker.setPosition(picked);
+            form.elements.name.focus();
+        });
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const data = new FormData(form);
+            const rating = data.get("rating");
+            submitButton.disabled = true;
+            try {
+                const response = await fetch("/api/restaurants", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        name: data.get("name"),
+                        address: data.get("address"),
+                        cuisineType: data.get("cuisineType") || null,
+                        rating: rating === "" ? null : Number(rating),
+                        latitude: picked.lat(),
+                        longitude: picked.lng()
+                    })
+                });
+                const body = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    showMessage(body.message || `저장에 실패했습니다. (HTTP ${response.status})`, true);
+                    return;
+                }
+                toggle.checked = true;
+                markers.forEach((marker) => marker.setMap(map));
+                addMarker(body);
+                resetAdding();
+                showMessage(`'${body.name}'을(를) 등록했습니다.`);
+            } catch (error) {
+                showMessage("서버에 연결할 수 없습니다.", true);
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+
+        try {
+            const response = await fetch("/api/restaurants");
+            if (!response.ok) throw new Error(`Restaurant HTTP ${response.status}`);
+            (await response.json()).forEach(addMarker);
+            toggle.disabled = false;
+            addButton.disabled = false;
+        } catch (error) {
+            showMessage("맛집은 DB에 연결된 상태에서만 이용할 수 있습니다.", true);
+        }
+    }
+
     async function initMap() {
         const map = new google.maps.Map(document.getElementById("map"), {
             center: { lat: 51.5074, lng: -0.1278 },
@@ -163,6 +379,8 @@
 
         // Initialize editing before fetching themes so a failed data request does not block drawing.
         new window.CustomLayerDraw(map);
+        initRestaurants(map);
+
         const checkboxes = [...document.querySelectorAll("[data-theme]")];
         const legend = document.getElementById("legend");
         const legendHeading = document.getElementById("legend-heading");
