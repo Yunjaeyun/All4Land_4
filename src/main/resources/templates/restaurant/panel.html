@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside id="restaurant-panel" class="map-panel restaurant-panel" th:fragment="panel" aria-label="맛집 관리" hidden>
+    <h1>맛집 관리</h1>
+    <p class="description">런던 LSOA 구역 안의 맛집만 등록할 수 있으며, 위치에 따라 치안 등급이 자동으로 연결됩니다.</p>
+    <div class="restaurant-row">
+        <label class="layer-toggle" for="layer-restaurant">
+            <input id="layer-restaurant" type="checkbox" checked disabled>
+            맛집 표시
+        </label>
+        <button id="restaurant-add" class="button" type="button" disabled>맛집 추가</button>
+    </div>
+    <p id="restaurant-hint" class="restaurant-hint" hidden>
+        지도에서 맛집 위치를 클릭하세요.
+        <button id="restaurant-pick-cancel" class="button secondary" type="button">취소</button>
+    </p>
+    <form id="restaurant-form" class="restaurant-form" hidden>
+        <p id="restaurant-coords" class="coords"></p>
+        <label>상호명 *
+            <input name="name" required maxlength="150" autocomplete="off">
+        </label>
+        <label>주소 *
+            <input name="address" required maxlength="255" autocomplete="off">
+        </label>
+        <label>음식 종류
+            <input name="cuisineType" maxlength="50" placeholder="예: Fish and Chips" autocomplete="off">
+        </label>
+        <label>평점 (0~5)
+            <input name="rating" type="number" min="0" max="5" step="0.1">
+        </label>
+        <div class="actions">
+            <button id="restaurant-form-cancel" class="button secondary" type="button">취소</button>
+            <button id="restaurant-submit" class="button" type="submit">저장</button>
+        </div>
+    </form>
+    <p id="restaurant-message" class="restaurant-message" role="status" aria-live="polite" hidden></p>
+</aside>
+</body>
+</html>

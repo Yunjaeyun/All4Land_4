@@ -34,11 +34,13 @@ class MapPageIntegrationTests {
         var html = response.body();
         for (var expected : new String[] { "data-menu=\"custom-layer\"", "id=\"map-panel\"",
                 "id=\"custom-layer-panel\"", "data-theme=\"greenspace\"", "data-theme=\"population\"",
-                "id=\"layer-register\"", "id=\"layer-query-form\"", "new window.CustomLayerDraw(map)" }) {
+                "id=\"layer-register\"", "id=\"layer-query-form\"", "new window.CustomLayerDraw(map)",
+                "data-menu=\"restaurant\"", "id=\"restaurant-panel\"", "id=\"restaurant-form\"", "initRestaurants(map)" }) {
             assertTrue(html.contains(expected), expected);
         }
         for (var resource : new String[] { "/js/custom-layer/panel.js", "/js/custom-layer/draw.js",
-                "/css/navigation.css", "/css/custom-layer/panel.css" }) {
+                "/css/navigation.css", "/css/custom-layer/panel.css",
+                "/js/restaurant/restaurant.js", "/css/restaurant/panel.css" }) {
             assertTrue(html.contains(resource));
             assertEquals(200, get(resource).statusCode(), resource);
         }

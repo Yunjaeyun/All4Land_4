@@ -1,6 +1,10 @@
 (() => {
-    const mapPanel = document.getElementById("map-panel");
-    const customPanel = document.getElementById("custom-layer-panel");
+    const panels = {
+        map: document.getElementById("map-panel"),
+        "custom-layer": document.getElementById("custom-layer-panel"),
+        restaurant: document.getElementById("restaurant-panel")
+    };
+    const customPanel = panels["custom-layer"];
     const tabs = [...document.querySelectorAll("[data-layer-tab]")];
     const latitude = document.getElementById("layer-latitude");
     const longitude = document.getElementById("layer-longitude");
@@ -16,8 +20,7 @@
 
     function selectMenu(menu) {
         document.body.dataset.activeMenu = menu;
-        mapPanel.hidden = menu !== "map";
-        customPanel.hidden = menu !== "custom-layer";
+        Object.entries(panels).forEach(([key, panel]) => { panel.hidden = key !== menu; });
         document.querySelectorAll(".app-nav [data-menu]").forEach((button) => {
             button.setAttribute("aria-pressed", String(button.dataset.menu === menu));
         });
@@ -89,5 +92,6 @@
         feedback.textContent = "사진 미리보기입니다. 아직 서버에 저장되지 않습니다.";
     });
     customPanel.querySelectorAll("form").forEach((form) => form.addEventListener("submit", (event) => event.preventDefault()));
-    selectMenu(new URLSearchParams(location.search).get("menu") === "map" ? "map" : "custom-layer");
+    const requestedMenu = new URLSearchParams(location.search).get("menu");
+    selectMenu(Object.hasOwn(panels, requestedMenu) ? requestedMenu : "custom-layer");
 })();

@@ -6,7 +6,7 @@
     <nav class="app-nav" aria-label="주 메뉴">
         <button type="button" data-menu="map" aria-controls="map-panel" th:attr="aria-pressed=${activeMenu == 'map'}">지도 조회</button>
         <span class="app-nav-pending" aria-disabled="true">숙소 검색 <small>준비 중</small></span>
-        <span class="app-nav-pending" aria-disabled="true">맛집 관리 <small>준비 중</small></span>
+        <button type="button" data-menu="restaurant" aria-controls="restaurant-panel" th:attr="aria-pressed=${activeMenu == 'restaurant'}">맛집 관리</button>
         <button type="button" data-menu="custom-layer" aria-controls="custom-layer-panel" th:attr="aria-pressed=${activeMenu == 'custom-layer'}">내 레이어</button>
     </nav>
 </header>

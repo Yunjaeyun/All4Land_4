@@ -1,0 +1,27 @@
+.restaurant-row { display: flex; gap: 7px; }
+.restaurant-row .layer-toggle { flex: 1; }
+.restaurant-panel .button {
+    min-height: 40px;
+    padding: 0 13px;
+    border: 1px solid #345f82;
+    border-radius: 8px;
+    background: #345f82;
+    color: #ffffff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+}
+.restaurant-panel .button.secondary { border-color: #cfd8df; background: #ffffff; color: #40505c; }
+.restaurant-panel .button:disabled { cursor: not-allowed; opacity: 0.5; }
+.restaurant-hint { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 9px 0 0; color: #345f82; font-size: 12px; font-weight: 700; }
+.restaurant-panel .restaurant-hint .button { min-height: 30px; }
+.restaurant-form { display: grid; gap: 8px; margin-top: 10px; }
+.restaurant-form label { display: grid; gap: 3px; color: #40505c; font-size: 11px; font-weight: 700; }
+.restaurant-form input { min-height: 34px; padding: 0 9px; border: 1px solid #cfd8df; border-radius: 6px; font: inherit; font-size: 13px; }
+.restaurant-form .coords { margin: 0; color: #78858e; font-size: 11px; }
+.restaurant-form .actions { display: flex; justify-content: flex-end; gap: 7px; }
+.restaurant-message { margin: 8px 0 0; color: #2f7d4f; font-size: 11px; }
+.restaurant-message.error { color: #c0392b; }
+.restaurant-info { max-width: 240px; color: #1d2d39; font-size: 12px; line-height: 1.55; }
+.restaurant-info strong { display: block; margin-bottom: 3px; font-size: 14px; }
