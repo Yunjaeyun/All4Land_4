@@ -25,8 +25,9 @@ public class Restaurant extends BaseEntity {
     @JoinColumn(name = "safety_zone_id", nullable = false)
     private SafetyZone safetyZone;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    // 로그인 기능 전까지는 등록자 없이 저장한다
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
     private User user;
 
     @Column(name = "name", nullable = false, length = 150)
