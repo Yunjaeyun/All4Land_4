@@ -228,11 +228,13 @@
 
         function applyTheme(themeKey) {
             const config = THEMES[themeKey];
+            // 맛집 관리에서는 음식점 아이콘이 보이도록 주제도를 옅게 한다
+            const fillOpacity = document.body.dataset.activeMenu === "restaurant" ? 0.3 : 0.66;
             map.data.setStyle((feature) => {
                 const level = feature.getProperty(config.levelProperty);
                 return {
                     fillColor: level ? config.colors[level - 1] : MISSING_COLOR,
-                    fillOpacity: 0.66,
+                    fillOpacity,
                     strokeColor: "#ffffff",
                     strokeOpacity: 0.75,
                     strokeWeight: 0.45,
@@ -250,6 +252,10 @@
             activeTheme = themeKey;
             applyTheme(themeKey);
         }
+
+        window.addEventListener("app:menu", () => {
+            if (activeTheme && metadata) applyTheme(activeTheme);
+        });
 
         checkboxes.forEach((checkbox) => {
             checkbox.addEventListener("change", () => {
