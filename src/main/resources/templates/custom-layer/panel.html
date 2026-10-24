@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside id="custom-layer-panel" class="map-panel custom-layer-panel" th:fragment="panel" aria-label="내 레이어">
+    <h1>내 레이어</h1>
+    <div class="layer-tabs" role="tablist" aria-label="레이어 작업">
+        <button id="layer-add-tab" type="button" role="tab" aria-controls="layer-add" aria-selected="true" data-layer-tab="layer-add">레이어 추가</button>
+        <button id="layer-query-tab" type="button" role="tab" aria-controls="layer-query" aria-selected="false" tabindex="-1" data-layer-tab="layer-query">조건 조회</button>
+    </div>
+    <section id="layer-add" role="tabpanel" aria-labelledby="layer-add-tab">
+        <form id="layer-add-form">
+            <label for="layer-name">레이어 이름</label>
+            <input id="layer-name" name="name" maxlength="100" placeholder="9월 오후 6시 노을 명소" required>
+            <div class="layer-fields">
+                <div><label for="layer-month">월</label><select id="layer-month" name="month" class="month-options"></select></div>
+                <div><label for="layer-time">시간</label><input id="layer-time" name="time" type="time" value="18:00" required></div>
+            </div>
+            <fieldset class="draw-tools">
+                <legend>지도 그리기</legend>
+                <div class="draw-modes" role="group" aria-label="그리기 도구">
+                    <button type="button" data-draw-mode="select" aria-pressed="true" disabled>선택·편집</button>
+                    <button type="button" data-draw-mode="marker" aria-pressed="false" disabled>마커</button>
+                    <button type="button" data-draw-mode="polyline" aria-pressed="false" disabled>선</button>
+                    <button type="button" data-draw-mode="polygon" aria-pressed="false" disabled>다각형</button>
+                    <button type="button" data-draw-mode="rectangle" aria-pressed="false" disabled>사각형</button>
+                    <button type="button" data-draw-mode="circle" aria-pressed="false" disabled>원</button>
+                </div>
+                <label for="draw-color">도형 색상</label><input id="draw-color" type="color" value="#247b65">
+                <div class="draw-actions">
+                    <button id="draw-finish" type="button" disabled>그리기 완료</button>
+                    <button id="draw-cancel" type="button" disabled>그리기 취소</button>
+                    <button id="draw-delete" type="button" disabled>선택 삭제</button>
+                </div>
+                <p id="draw-status" class="layer-hint" role="status">지도가 준비되면 그리기 도구가 활성화됩니다.</p>
+                <p id="draw-count" class="layer-hint">등록 대기 도형 0개</p>
+            </fieldset>
+            <label for="layer-photo">사진</label>
+            <input id="layer-photo" type="file" accept="image/jpeg,image/png,image/webp">
+            <img id="layer-photo-preview" alt="선택한 장소 사진 미리보기" hidden>
+            <p class="layer-hint">마커 도구에서는 지도 클릭 또는 좌표 입력으로 마커를 추가할 수 있습니다.</p>
+            <div class="layer-fields">
+                <div><label for="layer-latitude">위도</label><input id="layer-latitude" type="number" min="-90" max="90" step="any" placeholder="51.5074"></div>
+                <div><label for="layer-longitude">경도</label><input id="layer-longitude" type="number" min="-180" max="180" step="any" placeholder="-0.1278"></div>
+            </div>
+            <button id="add-coordinate-marker" type="button">좌표에 마커 추가</button>
+            <p id="layer-feedback" class="layer-hint" role="status"></p>
+            <button id="layer-register" class="layer-submit" type="submit" disabled>레이어 등록</button>
+        </form>
+    </section>
+    <section id="layer-query" role="tabpanel" aria-labelledby="layer-query-tab" hidden>
+        <form id="layer-query-form">
+            <label for="query-month">월</label><select id="query-month" name="month" class="month-options"></select>
+            <div class="layer-fields">
+                <div><label for="query-start">시작 시간</label><input id="query-start" type="time" value="17:00" required></div>
+                <div><label for="query-end">종료 시간</label><input id="query-end" type="time" value="19:00" required></div>
+            </div>
+            <p class="layer-hint">시작·종료 시간을 포함합니다. 종료가 시작보다 이르면 자정을 넘는 시간대로 조회합니다.</p>
+            <button id="layer-query-submit" class="layer-submit" type="submit" disabled>조회</button>
+            <button id="layer-query-reset" class="layer-secondary" type="button">조건 초기화</button>
+        </form>
+        <p id="layer-query-status" class="layer-hint" role="status">조건을 선택하고 조회하세요.</p>
+    </section>
+    <section aria-label="레이어 관리">
+        <h2 class="draw-list-title">등록한 레이어</h2>
+        <ul id="draw-layers" class="draw-layers" aria-label="등록한 레이어"></ul>
+        <section id="layer-details" hidden aria-label="선택한 레이어">
+            <h2 id="layer-details-title" class="draw-list-title"></h2>
+            <p id="layer-details-meta" class="layer-hint"></p>
+            <img id="layer-details-photo" class="layer-image" alt="선택한 레이어 사진" hidden>
+        </section>
+        <form id="layer-edit-form" hidden>
+            <h2 class="draw-list-title">레이어 정보 수정</h2>
+            <label for="edit-layer-name">이름</label><input id="edit-layer-name" maxlength="100" required>
+            <div class="layer-fields">
+                <div><label for="edit-layer-month">월</label><select id="edit-layer-month" class="month-options"></select></div>
+                <div><label for="edit-layer-time">시간</label><input id="edit-layer-time" type="time" required></div>
+            </div>
+            <label for="edit-layer-photo">사진 교체</label><input id="edit-layer-photo" type="file" accept="image/jpeg,image/png,image/webp">
+            <label class="layer-check"><input id="edit-remove-photo" type="checkbox"> 기존 사진 제거</label>
+            <p id="layer-edit-status" class="layer-hint" role="status"></p>
+            <button class="layer-submit" type="submit">수정 적용</button>
+            <button id="layer-edit-cancel" class="layer-secondary" type="button">수정 취소</button>
+        </form>
+    </section>
+    <p class="layer-hint">레이어와 사진은 현재 화면에서만 유지됩니다. 새로고침하면 초기화됩니다. 사용자 구분과 DB 저장은 추후 연결됩니다.</p>
+</aside>
+</body>
+</html>

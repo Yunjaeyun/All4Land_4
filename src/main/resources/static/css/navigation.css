@@ -1,0 +1,19 @@
+:root { --app-header-height: 64px; }
+.app-header { position: relative; z-index: 10; display: flex; align-items: center; gap: 40px; box-sizing: border-box; height: var(--app-header-height); padding: 0 24px; border-bottom: 1px solid #dde5e0; background: #fff; color: #20352e; font-family: Arial, "Noto Sans KR", sans-serif; }
+.app-brand { flex-shrink: 0; color: #20352e; font-size: 16px; font-weight: 700; text-decoration: none; }
+.app-nav { display: flex; align-items: center; align-self: stretch; gap: 28px; min-width: 0; overflow-x: auto; white-space: nowrap; }
+.app-nav > button, .app-nav-pending { display: flex; align-items: center; flex-shrink: 0; gap: 6px; border-bottom: 3px solid transparent; padding: 3px 0 0; color: #50635a; font-size: 14px; text-decoration: none; }
+.app-nav > button:hover { color: #247b65; }
+.app-nav > button[aria-pressed="true"] { border-bottom-color: #247b65; color: #247b65; font-weight: 700; }
+.app-nav-pending { color: #87958d; }
+.app-nav-pending small { border-radius: 4px; padding: 3px 5px; background: #f0f3f1; font-size: 10px; }
+.app-header button:focus-visible { outline: 2px solid #247b65; outline-offset: -2px; }
+@media (max-width: 720px) {
+    :root { --app-header-height: 104px; }
+    .app-header { flex-direction: column; align-items: stretch; gap: 12px; padding: 14px 16px 0; }
+    .app-nav { flex: 1; gap: 22px; }
+}
+
+.app-header button { font-family: inherit; cursor: pointer; background: transparent; }
+.app-brand { border: 0; padding: 0; text-align: left; }
+.app-nav > button { border-top: 0; border-left: 0; border-right: 0; }

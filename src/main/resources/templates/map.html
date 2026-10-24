@@ -4,17 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>런던 지역별 GIS 주제도</title>
+    <link rel="stylesheet" th:href="@{/css/navigation.css}">
+    <link rel="stylesheet" th:href="@{/css/custom-layer/panel.css}">
     <style>
         :root { color-scheme: light; font-family: Arial, "Noto Sans KR", sans-serif; }
         * { box-sizing: border-box; }
-        html, body, #map { width: 100%; height: 100%; margin: 0; }
+        html, body { width: 100%; height: 100%; margin: 0; }
+        #map { width: 100%; height: calc(100% - var(--app-header-height)); }
 
         .map-panel {
             position: fixed;
             z-index: 2;
-            top: 16px;
+            top: calc(var(--app-header-height) + 16px);
             left: 16px;
             width: min(350px, calc(100vw - 32px));
+            max-height: calc(100vh - var(--app-header-height) - 32px);
+            overflow-y: auto;
             padding: 17px;
             border: 1px solid #d7dee5;
             border-radius: 12px;
@@ -54,12 +59,13 @@
         [hidden] { display: none !important; }
 
         @media (max-width: 520px) {
-            .map-panel { top: 10px; left: 10px; width: calc(100vw - 20px); max-height: calc(100vh - 20px); overflow-y: auto; }
+            .map-panel { top: calc(var(--app-header-height) + 10px); left: 10px; width: calc(100vw - 20px); max-height: calc(100vh - var(--app-header-height) - 20px); overflow-y: auto; }
         }
     </style>
 </head>
-<body>
-<aside class="map-panel" aria-label="런던 주제도 레이어 선택">
+<body data-active-menu="custom-layer">
+<header th:replace="~{fragments/navigation :: navigation('custom-layer')}"></header>
+<aside id="map-panel" class="map-panel" aria-label="런던 주제도 레이어 선택" hidden>
     <h1>런던 지역별 GIS 주제도</h1>
     <p class="description">LSOA 2021 구역 기준입니다. 체크박스는 한 번에 한 레이어만 선택됩니다.</p>
 
@@ -95,9 +101,12 @@
         Contains National Statistics and OS data © Crown copyright and database right
     </div>
 </aside>
+<aside th:replace="~{custom-layer/panel :: panel}"></aside>
 <div id="map" aria-label="런던 숙소, 치안, 인구, 녹지 주제도"></div>
+<script th:src="@{/js/custom-layer/panel.js}"></script>
+<script th:src="@{/js/custom-layer/draw.js}"></script>
 
-<script th:inline="javascript">
+<script>
     const MISSING_COLOR = "#bdbdbd";
     const THEMES = {
         accommodation: {
@@ -152,6 +161,8 @@
             ]
         });
 
+        // Initialize editing before fetching themes so a failed data request does not block drawing.
+        new window.CustomLayerDraw(map);
         const checkboxes = [...document.querySelectorAll("[data-theme]")];
         const legend = document.getElementById("legend");
         const legendHeading = document.getElementById("legend-heading");
@@ -162,10 +173,12 @@
         let activeTheme = "safety";
         let resumeTimer;
 
-        const formatValue = (value, config) => Number(value).toLocaleString("ko-KR", {
-            minimumFractionDigits: config.decimals,
-            maximumFractionDigits: config.decimals
-        });
+        function formatValue(value, config) {
+            return Number(value).toLocaleString("ko-KR", {
+                minimumFractionDigits: config.decimals,
+                maximumFractionDigits: config.decimals
+            });
+        }
 
         function intervalLabels(themeKey) {
             const config = THEMES[themeKey];
@@ -245,14 +258,25 @@
             });
         });
 
-        const response = await fetch("/data/london-lsoa-themes.json");
-        if (!response.ok) throw new Error(`Theme data HTTP ${response.status}`);
-        const geojson = await response.json();
-        metadata = geojson.metadata;
-        map.data.addGeoJson(geojson);
-        checkboxes.forEach((checkbox) => checkbox.disabled = false);
-        selectTheme("safety");
-        status.hidden = true;
+        async function loadThemes() {
+            const response = await fetch("/data/london-lsoa-themes.json");
+            if (!response.ok) throw new Error(`Theme data HTTP ${response.status}`);
+            return response.json();
+        }
+
+        try {
+            const geojson = await loadThemes();
+            metadata = geojson.metadata;
+            map.data.addGeoJson(geojson);
+            checkboxes.forEach((checkbox) => checkbox.disabled = false);
+            selectTheme("safety");
+            status.hidden = true;
+        } catch (error) {
+            activeTheme = null;
+            status.hidden = false;
+            status.textContent = "주제도 데이터를 불러오지 못했습니다. 새로고침해 주세요. 내 레이어 그리기는 계속 사용할 수 있습니다.";
+            console.error(error);
+        }
 
         function suspendRendering() {
             if (!activeTheme) return;
