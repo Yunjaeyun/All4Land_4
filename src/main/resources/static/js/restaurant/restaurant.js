@@ -15,6 +15,14 @@ async function initRestaurants(map) {
     let picked = null;
     let draftMarker = null;
 
+    // 맛집 관리 메뉴에서만 Google 지도의 음식점·상점 아이콘을 보인다
+    const baseStyles = map.get("styles") || [];
+    const restaurantStyles = [...baseStyles, { featureType: "poi.business", stylers: [{ visibility: "on" }] }];
+    function syncMapStyles() {
+        map.setOptions({ styles: document.body.dataset.activeMenu === "restaurant" ? restaurantStyles : baseStyles });
+    }
+    syncMapStyles();
+
     function showMessage(text, isError = false) {
         message.textContent = text;
         message.classList.toggle("error", isError);
@@ -93,12 +101,15 @@ async function initRestaurants(map) {
     // 다른 메뉴로 넘어가면 추가 작업을 취소해 내 레이어 그리기와 클릭이 겹치지 않게 한다
     window.addEventListener("app:menu", (event) => {
         if (event.detail.menu !== "restaurant" && (picking || !form.hidden)) resetAdding();
+        syncMapStyles();
     });
 
     // 위치 선택 중이거나 폼이 열려 있으면 클릭한 곳으로 위치를 옮긴다
     map.addListener("click", (event) => {
         if (document.body.dataset.activeMenu !== "restaurant") return;
         if (!picking && form.hidden) return;
+        // 음식점 아이콘을 클릭했으면 Google 기본 정보창 대신 그 위치를 사용한다
+        if (event.placeId) event.stop();
         picking = false;
         picked = event.latLng;
         hint.hidden = true;
