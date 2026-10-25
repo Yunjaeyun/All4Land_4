@@ -21,18 +21,16 @@ google:
 
 `run.sh`는 주제도만 확인할 수 있도록 `map-only` 프로필로 실행되며 PostgreSQL/PostGIS 연결을 요구하지 않습니다. 전체 백엔드를 실행할 때는 기존 DB 환경변수와 기본 프로필을 사용합니다.
 
-### IntelliJ에서 실행 (Community 포함)
+### 로컬에서 전체 실행
 
-앱은 프로젝트 루트의 `.env`를 읽으므로 docker compose와 IntelliJ가 같은 값을 씁니다. 실행 구성에 환경변수를 따로 넣을 필요가 없습니다.
+`.env.example`을 복사해 `.env`를 만들고 DB 계정과 Google Maps 키를 채운 뒤 DB를 띄웁니다. 앱이 프로젝트 루트의 `.env`를 읽기 때문에 docker compose와 같은 값을 씁니다.
 
-1. `cp .env.example .env` 후 `POSTGRES_USER`, `POSTGRES_PASSWORD`, `GOOGLE_MAPS_API_KEY`를 채웁니다. 값에 따옴표를 붙이지 않습니다.
-2. DB를 띄웁니다: `docker compose up -d db` (PostGIS, `localhost:5433`)
-3. IntelliJ에서 프로젝트 폴더를 열고 Gradle 동기화가 끝나면, 오른쪽 위 실행 구성에서 **All4Land**를 선택해 실행합니다. DB 없이 주제도만 보려면 **All4Land (map-only)**를 고릅니다.
-4. <http://localhost:8080>
+```bash
+cp .env.example .env
+docker compose up -d db
+```
 
-- 실행 구성은 `.run/`에 들어 있어 별도 설정 없이 나타납니다. 안 보이면 `AllForLandSideProjApplication`의 `main` 옆 ▶ 버튼으로 실행해도 됩니다 (작업 디렉터리가 프로젝트 루트여야 `.env`를 찾습니다).
-- Project Structure → SDK는 Java 21로 맞춥니다. Lombok 플러그인이 꺼져 있다면 켭니다.
-- `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`를 환경변수로 주면 `.env`보다 우선합니다. 없으면 `.env`의 `POSTGRES_*`, `DB_PORT`로 `jdbc:postgresql://localhost:5433/all4land`에 접속합니다.
+IntelliJ에서는 `.run/`에 있는 `All4Land` 실행 구성으로 실행합니다. DB 없이 주제도만 볼 때는 `All4Land (map-only)`를 씁니다. `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`를 환경변수로 지정하면 `.env`보다 우선합니다.
 
 ## 배포
 
