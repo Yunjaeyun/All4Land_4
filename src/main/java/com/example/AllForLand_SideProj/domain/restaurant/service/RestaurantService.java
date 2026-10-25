@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @Profile("!map-only")
@@ -50,5 +51,12 @@ public class RestaurantService {
                 .build();
 
         return RestaurantResponse.from(restaurantRepository.save(restaurant));
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        Restaurant restaurant = restaurantRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("이미 삭제되었거나 존재하지 않는 맛집입니다."));
+        restaurantRepository.delete(restaurant);
     }
 }

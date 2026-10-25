@@ -1,4 +1,4 @@
-/* 맛집 레이어: 목록 마커 표시와 지도 클릭으로 맛집 등록 (/api/restaurants) */
+/* 맛집 레이어: 목록·마커 표시, 지도 클릭으로 맛집 등록, 목록에서 삭제 (/api/restaurants) */
 const SAFETY_LABELS = ["매우 안전", "안전", "보통", "주의", "위험"];
 
 async function initRestaurants(map) {
@@ -9,8 +9,13 @@ async function initRestaurants(map) {
     const coords = document.getElementById("restaurant-coords");
     const submitButton = document.getElementById("restaurant-submit");
     const message = document.getElementById("restaurant-message");
+    const list = document.getElementById("restaurant-list");
+    const count = document.getElementById("restaurant-count");
+    const empty = document.getElementById("restaurant-empty");
     const infoWindow = new google.maps.InfoWindow();
-    const markers = [];
+    // id → { restaurant, marker, item } (목록은 최신 등록 순)
+    const entries = new Map();
+    let openEntry = null;
     let picking = false;
     let picked = null;
     let draftMarker = null;
@@ -35,11 +40,9 @@ async function initRestaurants(map) {
         box.className = "restaurant-info";
         title.textContent = restaurant.name;
         box.append(title);
-        const detail = [restaurant.cuisineType, restaurant.rating != null ? `★ ${restaurant.rating}` : null]
-            .filter(Boolean).join(" · ");
         [
             restaurant.address,
-            detail,
+            detailText(restaurant),
             `${restaurant.lsoaName} · 치안 ${restaurant.safetyLevel}등급 (${SAFETY_LABELS[restaurant.safetyLevel - 1]})`
         ].filter(Boolean).forEach((line) => {
             const row = document.createElement("div");
@@ -49,7 +52,86 @@ async function initRestaurants(map) {
         return box;
     }
 
-    function addMarker(restaurant) {
+    function detailText(restaurant) {
+        return [restaurant.cuisineType, restaurant.rating != null ? `★ ${restaurant.rating}` : null]
+            .filter(Boolean).join(" · ");
+    }
+
+    function syncListState() {
+        count.textContent = entries.size;
+        empty.hidden = entries.size > 0;
+    }
+
+    function showMarkers() {
+        toggle.checked = true;
+        entries.forEach(({ marker }) => marker.setMap(map));
+    }
+
+    function openInfo(entry) {
+        infoWindow.setContent(infoContent(entry.restaurant));
+        infoWindow.open({ map, anchor: entry.marker });
+        openEntry = entry;
+    }
+
+    function listItem(entry) {
+        const { restaurant } = entry;
+        const item = document.createElement("li");
+        const focusButton = document.createElement("button");
+        const name = document.createElement("strong");
+        const sub = document.createElement("span");
+        const deleteButton = document.createElement("button");
+        focusButton.type = "button";
+        focusButton.className = "restaurant-item";
+        name.textContent = restaurant.name;
+        sub.textContent = detailText(restaurant) || restaurant.address;
+        focusButton.append(name, sub);
+        focusButton.addEventListener("click", () => {
+            showMarkers();
+            map.panTo(entry.marker.getPosition());
+            if (map.getZoom() < 15) map.setZoom(15);
+            openInfo(entry);
+        });
+        deleteButton.type = "button";
+        deleteButton.className = "button danger";
+        deleteButton.textContent = "삭제";
+        deleteButton.setAttribute("aria-label", `${restaurant.name} 삭제`);
+        deleteButton.addEventListener("click", () => deleteRestaurant(entry, deleteButton));
+        item.append(focusButton, deleteButton);
+        return item;
+    }
+
+    function removeEntry(id) {
+        const entry = entries.get(id);
+        if (!entry) return;
+        if (openEntry === entry) infoWindow.close();
+        entry.marker.setMap(null);
+        entry.item.remove();
+        entries.delete(id);
+        syncListState();
+    }
+
+    async function deleteRestaurant(entry, button) {
+        const { restaurant } = entry;
+        if (!confirm(`'${restaurant.name}'을(를) 삭제할까요?`)) return;
+        button.disabled = true;
+        try {
+            const response = await fetch(`/api/restaurants/${restaurant.id}`, { method: "DELETE" });
+            // 이미 지워진 맛집(404)도 화면에서는 정리한다
+            if (!response.ok && response.status !== 404) {
+                const body = await response.json().catch(() => ({}));
+                showMessage(body.message || `삭제에 실패했습니다. (HTTP ${response.status})`, true);
+                return;
+            }
+            removeEntry(restaurant.id);
+            showMessage(`'${restaurant.name}'을(를) 삭제했습니다.`);
+        } catch (error) {
+            showMessage("서버에 연결할 수 없습니다.", true);
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    function addRestaurant(restaurant, { prepend = false } = {}) {
         const marker = new google.maps.Marker({
             position: { lat: Number(restaurant.latitude), lng: Number(restaurant.longitude) },
             map: toggle.checked ? map : null,
@@ -64,11 +146,13 @@ async function initRestaurants(map) {
                 strokeWeight: 2
             }
         });
-        marker.addListener("click", () => {
-            infoWindow.setContent(infoContent(restaurant));
-            infoWindow.open({ map, anchor: marker });
-        });
-        markers.push(marker);
+        const entry = { restaurant, marker };
+        entry.item = listItem(entry);
+        marker.addListener("click", () => openInfo(entry));
+        entries.set(restaurant.id, entry);
+        if (prepend) list.prepend(entry.item);
+        else list.append(entry.item);
+        syncListState();
     }
 
     function resetAdding() {
@@ -84,7 +168,7 @@ async function initRestaurants(map) {
     }
 
     toggle.addEventListener("change", () => {
-        markers.forEach((marker) => marker.setMap(toggle.checked ? map : null));
+        entries.forEach(({ marker }) => marker.setMap(toggle.checked ? map : null));
         if (!toggle.checked) infoWindow.close();
     });
 
@@ -144,9 +228,8 @@ async function initRestaurants(map) {
                 showMessage(body.message || `저장에 실패했습니다. (HTTP ${response.status})`, true);
                 return;
             }
-            toggle.checked = true;
-            markers.forEach((marker) => marker.setMap(map));
-            addMarker(body);
+            showMarkers();
+            addRestaurant(body, { prepend: true });
             resetAdding();
             showMessage(`'${body.name}'을(를) 등록했습니다.`);
         } catch (error) {
@@ -159,7 +242,8 @@ async function initRestaurants(map) {
     try {
         const response = await fetch("/api/restaurants");
         if (!response.ok) throw new Error(`Restaurant HTTP ${response.status}`);
-        (await response.json()).forEach(addMarker);
+        (await response.json()).forEach((restaurant) => addRestaurant(restaurant));
+        syncListState();
         toggle.disabled = false;
         addButton.disabled = false;
     } catch (error) {
