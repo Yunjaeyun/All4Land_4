@@ -35,7 +35,7 @@ class MapPageIntegrationTests {
         for (var expected : new String[] { "data-menu=\"custom-layer\"", "id=\"map-panel\"",
                 "id=\"custom-layer-panel\"", "data-theme=\"greenspace\"", "data-theme=\"population\"",
                 "id=\"layer-register\"", "id=\"layer-query-form\"", "new window.CustomLayerDraw(map)",
-                "data-menu=\"restaurant\"", "id=\"restaurant-panel\"", "id=\"restaurant-form\"", "initRestaurants(map)" }) {
+                "data-menu=\"restaurant\"", "id=\"restaurant-panel\"", "id=\"restaurant-form\"", "id=\"restaurant-list\"", "initRestaurants(map)" }) {
             assertTrue(html.contains(expected), expected);
         }
         for (var resource : new String[] { "/js/custom-layer/panel.js", "/js/custom-layer/draw.js",
