@@ -25,3 +25,15 @@
 .restaurant-message.error { color: #c0392b; }
 .restaurant-info { max-width: 240px; color: #1d2d39; font-size: 12px; line-height: 1.55; }
 .restaurant-info strong { display: block; margin-bottom: 3px; font-size: 14px; }
+.restaurant-list-section { margin-top: 14px; padding-top: 12px; border-top: 1px solid #e3e8ec; }
+.restaurant-list-section h2 { margin: 0 0 6px; color: #1d2d39; font-size: 13px; }
+.restaurant-list-section h2 span { color: #78858e; font-weight: 400; }
+.restaurant-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.restaurant-list li { display: flex; align-items: center; gap: 6px; }
+.restaurant-list .restaurant-item { flex: 1; min-width: 0; padding: 7px 9px; border: 1px solid #e3e8ec; border-radius: 6px; background: #ffffff; color: #1d2d39; cursor: pointer; font: inherit; text-align: left; }
+.restaurant-list .restaurant-item:hover { border-color: #345f82; }
+.restaurant-list .restaurant-item strong, .restaurant-list .restaurant-item span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.restaurant-list .restaurant-item strong { font-size: 13px; }
+.restaurant-list .restaurant-item span { color: #78858e; font-size: 11px; }
+.restaurant-panel .button.danger { min-height: 34px; padding: 0 10px; border-color: #e3b5ae; background: #ffffff; color: #c0392b; }
+.restaurant-empty { margin: 0; color: #78858e; font-size: 12px; }

@@ -21,6 +21,17 @@ google:
 
 `run.sh`는 주제도만 확인할 수 있도록 `map-only` 프로필로 실행되며 PostgreSQL/PostGIS 연결을 요구하지 않습니다. 전체 백엔드를 실행할 때는 기존 DB 환경변수와 기본 프로필을 사용합니다.
 
+### 로컬에서 전체 실행
+
+`.env.example`을 복사해 `.env`를 만들고 DB 계정과 Google Maps 키를 채운 뒤 DB를 띄웁니다. 앱이 프로젝트 루트의 `.env`를 읽기 때문에 docker compose와 같은 값을 씁니다.
+
+```bash
+cp .env.example .env
+docker compose up -d db
+```
+
+IntelliJ에서는 `.run/`에 있는 `All4Land` 실행 구성으로 실행합니다. DB 없이 주제도만 볼 때는 `All4Land (map-only)`를 씁니다. `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`를 환경변수로 지정하면 `.env`보다 우선합니다.
+
 ## 배포
 
 GCP VM에 docker compose로 배포합니다. main에 머지되면 GitHub Actions가 자동으로 VM에 배포합니다. 절차는 [docs/deploy.md](docs/deploy.md)를 참고하세요.

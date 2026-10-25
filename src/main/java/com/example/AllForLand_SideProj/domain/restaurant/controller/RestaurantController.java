@@ -29,4 +29,10 @@ public class RestaurantController {
     public RestaurantResponse create(@Valid @RequestBody RestaurantCreateRequest request) {
         return restaurantService.create(request);
     }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        restaurantService.delete(id);
+    }
 }
