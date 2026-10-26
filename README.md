@@ -1,6 +1,6 @@
 # All4Land_4
 
-Google Maps 위에 런던 LSOA 2021 기준 숙소·치안·인구·녹지 주제도를 표시합니다. 체크박스로 한 번에 하나의 주제도만 켤 수 있으며, 그 밖의 검색·추천·목록 기능은 포함하지 않습니다.
+Google Maps 위에 런던 LSOA 2021 기준 숙소·치안·인구·녹지 주제도를 표시합니다. 체크박스로 한 번에 하나의 주제도만 켤 수 있으며, 상단 "숙소 검색" 메뉴에서 Airbnb 숙소를 조건으로 찾을 수 있습니다.
 
 ## 실행
 
@@ -35,6 +35,26 @@ IntelliJ에서는 `.run/`에 있는 `All4Land` 실행 구성으로 실행합니�
 ## 배포
 
 GCP VM에 docker compose로 배포합니다. main에 머지되면 GitHub Actions가 자동으로 VM에 배포합니다. 절차는 [docs/deploy.md](docs/deploy.md)를 참고하세요.
+
+## 숙소 검색
+
+DB 연결 상태(기본 프로필)에서만 동작하며, `map-only` 프로필에서는 메뉴가 열려도 검색이 비활성 안내를 보여줍니다. 첫 실행 때 `accommodations`가 비어 있으면 `src/main/resources/data/london-airbnb-listings.json`(Kaggle, 9,993건)을 적재하고 좌표로 LSOA(치안 등급)를 연결합니다.
+
+Kaggle 원본에 숙소 이름이 없어서 `자치구 · 방 유형 · 침실 수`(예: `Camden · 전체 집 · 침실 1개`)로 이름을 만들어 저장합니다. 실제 숙소명이 아니므로 이름 대신 조건으로 찾는 용도입니다.
+
+`GET /api/accommodations/search` — 모든 파라미터는 선택이며 주어진 조건만 AND로 적용합니다.
+
+| 파라미터 | 설명 |
+| --- | --- |
+| `keyword` | 숙소 이름·LSOA 이름 부분 일치(대소문자 무시) |
+| `roomType` | `ENTIRE_HOME` / `PRIVATE_ROOM` / `SHARED_ROOM` |
+| `minPrice`, `maxPrice` | 총가격 범위 |
+| `guests`, `minBedrooms` | 최대 인원·침실 수 하한 |
+| `superhostOnly` | `true`면 슈퍼호스트만 |
+| `maxSafetyLevel` | 치안 등급 상한 (1=매우 안전 … 5=위험) |
+| `minSatisfaction` | 만족도 하한 (0~100) |
+| `sort` | `PRICE_ASC`(기본) `PRICE_DESC` `SATISFACTION_DESC` `CITY_CENTER_ASC` `METRO_ASC` |
+| `page`, `size` | 0부터 시작, `size` 기본 20·최대 100 |
 
 ## 주제도 지표
 

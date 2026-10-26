@@ -7,6 +7,7 @@
     <link rel="stylesheet" th:href="@{/css/navigation.css}">
     <link rel="stylesheet" th:href="@{/css/custom-layer/panel.css}">
     <link rel="stylesheet" th:href="@{/css/restaurant/panel.css}">
+    <link rel="stylesheet" th:href="@{/css/accommodation/panel.css}">
     <style>
         :root { color-scheme: light; font-family: Arial, "Noto Sans KR", sans-serif; }
         * { box-sizing: border-box; }
@@ -104,10 +105,12 @@
 </aside>
 <aside th:replace="~{custom-layer/panel :: panel}"></aside>
 <aside th:replace="~{restaurant/panel :: panel}"></aside>
+<aside th:replace="~{accommodation/panel :: panel}"></aside>
 <div id="map" aria-label="런던 숙소, 치안, 인구, 녹지 주제도"></div>
 <script th:src="@{/js/custom-layer/panel.js}"></script>
 <script th:src="@{/js/custom-layer/draw.js}"></script>
 <script th:src="@{/js/restaurant/restaurant.js}"></script>
+<script th:src="@{/js/accommodation/accommodation.js}"></script>
 
 <script>
     const MISSING_COLOR = "#bdbdbd";
@@ -167,6 +170,7 @@
         // Initialize editing before fetching themes so a failed data request does not block drawing.
         new window.CustomLayerDraw(map);
         initRestaurants(map);
+        initAccommodations(map);
 
         const checkboxes = [...document.querySelectorAll("[data-theme]")];
         const legend = document.getElementById("legend");

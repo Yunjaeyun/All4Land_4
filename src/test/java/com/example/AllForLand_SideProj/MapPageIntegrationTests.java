@@ -35,12 +35,14 @@ class MapPageIntegrationTests {
         for (var expected : new String[] { "data-menu=\"custom-layer\"", "id=\"map-panel\"",
                 "id=\"custom-layer-panel\"", "data-theme=\"greenspace\"", "data-theme=\"population\"",
                 "id=\"layer-register\"", "id=\"layer-query-form\"", "new window.CustomLayerDraw(map)",
-                "data-menu=\"restaurant\"", "id=\"restaurant-panel\"", "id=\"restaurant-form\"", "id=\"restaurant-list\"", "initRestaurants(map)" }) {
+                "data-menu=\"restaurant\"", "id=\"restaurant-panel\"", "id=\"restaurant-form\"", "id=\"restaurant-list\"", "initRestaurants(map)",
+                "data-menu=\"accommodation\"", "id=\"accommodation-panel\"", "id=\"accommodation-form\"", "id=\"accommodation-list\"", "initAccommodations(map)" }) {
             assertTrue(html.contains(expected), expected);
         }
         for (var resource : new String[] { "/js/custom-layer/panel.js", "/js/custom-layer/draw.js",
                 "/css/navigation.css", "/css/custom-layer/panel.css",
-                "/js/restaurant/restaurant.js", "/css/restaurant/panel.css" }) {
+                "/js/restaurant/restaurant.js", "/css/restaurant/panel.css",
+                "/js/accommodation/accommodation.js", "/css/accommodation/panel.css" }) {
             assertTrue(html.contains(resource));
             assertEquals(200, get(resource).statusCode(), resource);
         }

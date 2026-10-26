@@ -2,7 +2,8 @@
     const panels = {
         map: document.getElementById("map-panel"),
         "custom-layer": document.getElementById("custom-layer-panel"),
-        restaurant: document.getElementById("restaurant-panel")
+        restaurant: document.getElementById("restaurant-panel"),
+        accommodation: document.getElementById("accommodation-panel")
     };
     const customPanel = panels["custom-layer"];
     const tabs = [...document.querySelectorAll("[data-layer-tab]")];

@@ -1,0 +1,36 @@
+.accommodation-panel .button {
+    min-height: 40px;
+    padding: 0 13px;
+    border: 1px solid #345f82;
+    border-radius: 8px;
+    background: #345f82;
+    color: #ffffff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+}
+.accommodation-panel .button.secondary { border-color: #cfd8df; background: #ffffff; color: #40505c; }
+.accommodation-panel .button:disabled { cursor: not-allowed; opacity: 0.5; }
+.accommodation-form { display: grid; gap: 8px; }
+.accommodation-form .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.accommodation-form label { display: grid; gap: 3px; color: #40505c; font-size: 11px; font-weight: 700; }
+.accommodation-form input:not([type="checkbox"]), .accommodation-form select { min-height: 34px; width: 100%; padding: 0 9px; border: 1px solid #cfd8df; border-radius: 6px; background: #ffffff; font: inherit; font-size: 13px; }
+.accommodation-form label.check { display: flex; align-items: center; gap: 7px; font-size: 12px; }
+.accommodation-form label.check input { width: 16px; height: 16px; margin: 0; accent-color: #345f82; }
+.accommodation-form .actions { display: flex; justify-content: flex-end; gap: 7px; }
+.accommodation-message { margin: 8px 0 0; color: #2f7d4f; font-size: 11px; }
+.accommodation-message.error { color: #c0392b; }
+.accommodation-info { max-width: 240px; color: #1d2d39; font-size: 12px; line-height: 1.55; }
+.accommodation-info strong { display: block; margin-bottom: 3px; font-size: 14px; }
+.accommodation-list-section { margin-top: 14px; padding-top: 12px; border-top: 1px solid #e3e8ec; }
+.accommodation-list-section h2 { margin: 0 0 6px; color: #1d2d39; font-size: 13px; }
+.accommodation-list-section h2 span { color: #78858e; font-weight: 400; }
+.accommodation-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.accommodation-list .accommodation-item { width: 100%; padding: 7px 9px; border: 1px solid #e3e8ec; border-radius: 6px; background: #ffffff; color: #1d2d39; cursor: pointer; font: inherit; text-align: left; }
+.accommodation-list .accommodation-item:hover { border-color: #345f82; }
+.accommodation-list .accommodation-item strong, .accommodation-list .accommodation-item span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.accommodation-list .accommodation-item strong { font-size: 13px; }
+.accommodation-list .accommodation-item span { color: #78858e; font-size: 11px; }
+.accommodation-empty { margin: 0; color: #78858e; font-size: 12px; }
+.accommodation-panel .button.more { width: 100%; margin-top: 8px; }
