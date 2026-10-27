@@ -314,6 +314,40 @@
                 detail: { borough: event.feature.getProperty("borough") }
             }));
         });
+
+        const boroughFeatures = new Map();
+        map.data.forEach((feature) => {
+            const borough = feature.getProperty("borough");
+            if (!boroughFeatures.has(borough)) boroughFeatures.set(borough, []);
+            boroughFeatures.get(borough).push(feature);
+        });
+        const boroughTip = new google.maps.InfoWindow({ disableAutoPan: true, headerDisabled: true, pixelOffset: new google.maps.Size(0, -8) });
+        let hoveredBorough = null;
+        map.data.addListener("mouseover", (event) => {
+            if (document.body.dataset.activeMenu !== "accommodation") return;
+            const borough = event.feature.getProperty("borough");
+            if (borough !== hoveredBorough) {
+                hoveredBorough = borough;
+                map.data.revertStyle();
+                (boroughFeatures.get(borough) || []).forEach((feature) => {
+                    map.data.overrideStyle(feature, { fillOpacity: 0.92 });
+                });
+                const label = document.createElement("div");
+                label.textContent = borough;
+                label.style.cssText = "font-size:12px;font-weight:700;color:#1d2d39;padding:2px 4px;";
+                boroughTip.setContent(label);
+                boroughTip.open(map);
+            }
+            boroughTip.setPosition(event.latLng);
+        });
+        map.data.addListener("mousemove", (event) => {
+            if (hoveredBorough) boroughTip.setPosition(event.latLng);
+        });
+        map.data.addListener("mouseout", () => {
+            hoveredBorough = null;
+            map.data.revertStyle();
+            boroughTip.close();
+        });
     }
 
     window.gm_authFailure = () => {

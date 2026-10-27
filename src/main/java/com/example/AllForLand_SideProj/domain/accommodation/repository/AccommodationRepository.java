@@ -19,6 +19,10 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
     Page<Accommodation> findAll(Specification<Accommodation> spec, Pageable pageable);
     
 
-    @Query("select z.lsoaName from SafetyZone z")
+    @Query("select distinct z.lsoaName from SafetyZone z where exists (select a.id from Accommodation a where a.safetyZone = z)")
     List<String> findAllLsoaNames();
+
+    @Override
+    @EntityGraph(attributePaths = "safetyZone")
+    List<Accommodation> findAll(Specification<Accommodation> spec);
 }

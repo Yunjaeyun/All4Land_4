@@ -18,9 +18,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.stream.IntStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 
 @Service
 @Profile("!map-only")
@@ -31,6 +32,8 @@ public class AccommodationService {
     static final int DEFAULT_SIZE = 20;
     static final int DEFAULT_TOP_N = 10;
     static final int MAX_TOP_N = 50;
+    static final int MAX_PINS = 1000;
+    static final int PIN_LIMIT = 50;
 
     private final AccommodationRepository accommodationRepository;
 
@@ -77,6 +80,26 @@ public class AccommodationService {
                 .sorted()
                 .toList();
     }
+
+    public List<AccommodationResponse> pins(AccommodationSearchRequest request, ViewBounds bounds, boolean all) {
+        Specification<Accommodation> spec = toSpecification(request).and(inBounds(bounds));
+        AccommodationSort sort = request.sort() == null ? AccommodationSort.PRICE_ASC : request.sort();
+        int size = all ? MAX_PINS : PIN_LIMIT;
+        return accommodationRepository.findAll(spec, PageRequest.of(0, size, sort.toSort())).getContent().stream()
+                .map(AccommodationResponse::from)
+                .toList();
+    }
+
+    public record ViewBounds(double minLat, double maxLat, double minLng, double maxLng) {}
+
+    private static Specification<Accommodation> inBounds(ViewBounds bounds) {
+        return (root, query, cb) -> cb.and(
+                cb.between(root.<BigDecimal>get("latitude"),
+                        BigDecimal.valueOf(bounds.minLat()), BigDecimal.valueOf(bounds.maxLat())),
+                cb.between(root.<BigDecimal>get("longitude"),
+                        BigDecimal.valueOf(bounds.minLng()), BigDecimal.valueOf(bounds.maxLng())));
+    }
+
     static Specification<Accommodation> toSpecification(AccommodationSearchRequest request) {
     	
     	boolean safestTop = Boolean.TRUE.equals(request.safestTop());
