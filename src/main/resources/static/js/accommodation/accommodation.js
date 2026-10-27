@@ -12,6 +12,9 @@ function initAccommodations(map) {
     const count = document.getElementById("accommodation-count");
     const empty = document.getElementById("accommodation-empty");
     const moreButton = document.getElementById("accommodation-more");
+  const topToggle = form.querySelector('[name="safestTop"]');
+    const topSelect = form.querySelector('[name="topN"]');
+    const sortSelect = form.querySelector('[name="sort"]');
     const infoWindow = new google.maps.InfoWindow();
     const entries = [];
     let query = null;
@@ -28,11 +31,20 @@ function initAccommodations(map) {
     function formatNumber(value, digits = 0) {
         return Number(value).toLocaleString("ko-KR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
     }
-
+   function safetyLabel(level) {
+        return level ? ACCOMMODATION_SAFETY_LABELS[level - 1] : null;
+    }
+function syncTopMode() {
+        const top = topToggle.checked;
+        topSelect.disabled = !top;
+        sortSelect.disabled = top;
+        if (top) moreButton.hidden = true;
+    }
     function summaryText(item) {
         return [
             `총가격 ${formatNumber(item.priceTotal, 2)}`,
             `${item.maxGuests}인`,
+ 		item.safetyLevel ? `치안 ${safetyLabel(item.safetyLevel)}` : null,
             item.satisfactionScore ? `만족도 ${formatNumber(item.satisfactionScore)}` : null
         ].filter(Boolean).join(" · ");
     }
@@ -41,7 +53,7 @@ function initAccommodations(map) {
         const box = document.createElement("div");
         const title = document.createElement("strong");
         box.className = "accommodation-info";
-        title.textContent = item.name;
+          title.textContent = item.rank ? `${item.rank}. ${item.name}` : item.name;
         box.append(title);
         [
             `${ACCOMMODATION_ROOM_LABELS[item.roomType]} · 침실 ${item.bedrooms}개 · 최대 ${item.maxGuests}인${item.isSuperhost ? " · 슈퍼호스트" : ""}`,
@@ -68,6 +80,7 @@ function initAccommodations(map) {
             map,
             title: item.name,
             zIndex: 8,
+  label: item.rank ? { text: String(item.rank), color: "#ffffff", fontSize: "11px", fontWeight: "700" } : undefined,
             icon: {
                 path: google.maps.SymbolPath.CIRCLE,
                 scale: 6,
@@ -84,7 +97,7 @@ function initAccommodations(map) {
         const sub = document.createElement("span");
         button.type = "button";
         button.className = "accommodation-item";
-        name.textContent = item.name;
+         name.textContent = item.rank ? `${item.rank}. ${item.name}` : item.name;
         sub.textContent = summaryText(item);
         button.append(name, sub);
         button.addEventListener("click", () => {
@@ -143,7 +156,9 @@ function initAccommodations(map) {
             if (page === 0) clearEntries();
             body.items.forEach(addEntry);
             nextPage = body.page + 1;
-            count.textContent = `${formatNumber(body.total)}건 중 ${formatNumber(entries.length)}건 표시`;
+             count.textContent = topToggle.checked
+                ? `안전한 숙소 상위 ${formatNumber(entries.length)}개`
+                : `${formatNumber(body.total)}건 중 ${formatNumber(entries.length)}건 표시`;
             empty.hidden = body.total > 0;
             moreButton.hidden = !body.hasNext;
             message.hidden = true;
@@ -162,8 +177,10 @@ function initAccommodations(map) {
         event.preventDefault();
         search(0);
     });
+topToggle.addEventListener("change", syncTopMode);
     resetButton.addEventListener("click", () => {
         form.reset();
+        syncTopMode();
         search(0);
     });
     moreButton.addEventListener("click", () => search(nextPage));
@@ -178,5 +195,7 @@ function initAccommodations(map) {
             search(0);
         }
     });
+
+    syncTopMode();
     submitButton.disabled = false;
 }

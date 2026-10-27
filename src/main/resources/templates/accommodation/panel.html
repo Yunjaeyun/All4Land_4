@@ -3,11 +3,18 @@
 <body>
 <aside id="accommodation-panel" class="map-panel accommodation-panel" th:fragment="panel" aria-label="숙소 검색" hidden>
     <h1>숙소 검색</h1>
-    <p class="description">Airbnb 런던 숙소를 조건으로 찾습니다. 원본에 숙소 이름이 없어 '자치구 · 방 유형 · 침실 수'로 만든 이름을 씁니다.</p>
+    <p class="description">Airbnb 런던 숙소를 조건으로 찾습니다. '자치구 · 방 유형 · 침실 수'로 만든 이름을 씁니다.</p>
     <form id="accommodation-form" class="accommodation-form">
         <label>검색어 (지역·이름)
             <input name="keyword" maxlength="100" placeholder="예: Camden" autocomplete="off">
         </label>
+        <fieldset class="chips">
+            <legend>치안 안전도</legend>
+            <label class="chip"><input type="radio" name="maxSafetyLevel" value="" checked><span>전체</span></label>
+            <label class="chip"><input type="radio" name="maxSafetyLevel" value="3"><span>보통 이상</span></label>
+            <label class="chip"><input type="radio" name="maxSafetyLevel" value="2"><span>안전</span></label>
+            <label class="chip"><input type="radio" name="maxSafetyLevel" value="1"><span>매우 안전</span></label>
+        </fieldset>
         <div class="two">
             <label>최소 총가격
                 <input name="minPrice" type="number" min="0" step="1" inputmode="decimal">
@@ -25,28 +32,19 @@
                     <option value="SHARED_ROOM">공용실</option>
                 </select>
             </label>
-            <label>치안 등급
-                <select name="maxSafetyLevel">
-                    <option value="">전체</option>
-                    <option value="1">1등급 (매우 안전)</option>
-                    <option value="2">2등급 이내</option>
-                    <option value="3">3등급 이내</option>
-                    <option value="4">4등급 이내</option>
-                </select>
+           <label>인원 (이상)
+                <input name="guests" type="number" min="1" max="20" step="1">
             </label>
         </div>
         <div class="two">
-            <label>인원 (이상)
-                <input name="guests" type="number" min="1" max="20" step="1">
-            </label>
             <label>침실 (이상)
                 <input name="minBedrooms" type="number" min="0" max="20" step="1">
             </label>
-        </div>
-        <div class="two">
             <label>최소 만족도 (0~100)
                 <input name="minSatisfaction" type="number" min="0" max="100" step="1">
             </label>
+        </div>
+        <div class="two">
             <label>정렬
                 <select name="sort">
                     <option value="PRICE_ASC">가격 낮은순</option>
@@ -56,11 +54,25 @@
                     <option value="METRO_ASC">지하철 가까운순</option>
                 </select>
             </label>
+            <label class="check">
+                <input name="superhostOnly" type="checkbox" value="true">
+                슈퍼호스트만
+            </label>
+            </div>
+             <div class="topn-row">
+            <label class="check">
+                <input id="accommodation-top-toggle" name="safestTop" type="checkbox" value="true">
+                안전한 숙소 상위
+            </label>
+            <select id="accommodation-top-n" name="topN" aria-label="상위 개수" disabled>
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+                <option value="50">50</option>
+            </select>
+            <span>개</span>
         </div>
-        <label class="check">
-            <input name="superhostOnly" type="checkbox" value="true">
-            슈퍼호스트만
-        </label>
         <div class="actions">
             <button id="accommodation-reset" class="button secondary" type="button">초기화</button>
             <button id="accommodation-submit" class="button" type="submit" disabled>검색</button>

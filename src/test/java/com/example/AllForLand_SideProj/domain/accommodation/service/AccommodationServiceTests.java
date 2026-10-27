@@ -27,9 +27,27 @@ class AccommodationServiceTests {
 
     private static AccommodationSearchRequest request(BigDecimal minPrice, BigDecimal maxPrice,
                                                       AccommodationSort sort, Integer page, Integer size) {
-        return new AccommodationSearchRequest(null, null, minPrice, maxPrice, null, null, null, null, null, sort, page, size);
+        return new AccommodationSearchRequest(null, null, minPrice, maxPrice, null, null, null, null, null, sort, page, size,null,null);
     }
-
+    
+    private static AccommodationSearchRequest topRequest(Integer topN) {
+        return new AccommodationSearchRequest(null, null, null, null, null, null, null, null, null,
+                null, null, null, true, topN);
+    }
+    
+    private static Accommodation accommodation(long id) {
+        return Accommodation.builder()
+                .name("Camden · 전체 집 · 침실 1개")
+                .roomType(RoomType.ENTIRE_HOME)
+                .priceTotal(new BigDecimal("120.00"))
+                .latitude(new BigDecimal("51.46531"))
+                .longitude(new BigDecimal("-0.16032"))
+                .maxGuests(2)
+                .bedrooms(1)
+                .isSuperhost(false)
+                .build();
+    }
+    
     @Test
     void searchRejectsMinPriceAboveMaxPrice() {
         var request = request(new BigDecimal("500"), new BigDecimal("100"), null, null, null);
@@ -80,5 +98,42 @@ class AccommodationServiceTests {
         assertEquals("Camden · 전체 집 · 침실 1개", response.items().get(0).name());
         assertNull(response.items().get(0).lsoaName());
         assertNull(response.items().get(0).safetyLevel());
+    }
+    
+    @Test
+    @SuppressWarnings("unchecked")
+    void safestTopReturnsRankedItemsLimitedToTopN() {
+        when(repository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(accommodation(1L), accommodation(2L)), PageRequest.of(0, 3), 2));
+
+        AccommodationSearchResponse response = service.search(topRequest(3));
+
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).findAll(any(Specification.class), pageable.capture());
+        assertEquals(3, pageable.getValue().getPageSize());
+        assertEquals(2, response.items().size());
+        assertEquals(1, response.items().get(0).rank());
+        assertEquals(2, response.items().get(1).rank());
+        assertFalse(response.hasNext());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void safestTopDefaultsToTen() {
+        when(repository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
+
+        service.search(topRequest(null));
+
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).findAll(any(Specification.class), pageable.capture());
+        assertEquals(10, pageable.getValue().getPageSize());
+    }
+
+    @Test
+    void safestTopOutOfRangeIsRejected() {
+        assertThrows(IllegalArgumentException.class, () -> service.search(topRequest(0)));
+        assertThrows(IllegalArgumentException.class, () -> service.search(topRequest(51)));
+        verifyNoInteractions(repository);
     }
 }

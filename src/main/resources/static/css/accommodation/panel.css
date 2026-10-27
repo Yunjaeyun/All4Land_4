@@ -34,3 +34,14 @@
 .accommodation-list .accommodation-item span { color: #78858e; font-size: 11px; }
 .accommodation-empty { margin: 0; color: #78858e; font-size: 12px; }
 .accommodation-panel .button.more { width: 100%; margin-top: 8px; }
+.accommodation-form fieldset.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; border: 0; min-width: 0; }
+.accommodation-form fieldset.chips legend { width: 100%; padding: 0; margin-bottom: 4px; color: #40505c; font-size: 11px; font-weight: 700; }
+.accommodation-form label.chip { position: relative; display: inline-flex; align-items: center; gap: 0; }
+.accommodation-form .chip input { position: absolute; width: 1px; height: 1px; min-height: 0; margin: 0; padding: 0; border: 0; opacity: 0; }
+.accommodation-form .chip span { padding: 5px 11px; border: 1px solid #cfd8df; border-radius: 999px; background: #ffffff; color: #40505c; font-size: 12px; cursor: pointer; }
+.accommodation-form .chip input:checked + span { border-color: #345f82; background: #345f82; color: #ffffff; }
+.accommodation-form .chip input:focus-visible + span { outline: 2px solid #345f82; outline-offset: 2px; }
+.accommodation-form .topn-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; color: #40505c; font-size: 12px; }
+.accommodation-form .topn-row label.check { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.accommodation-form .topn-row select { min-height: 30px; padding: 0 6px; border: 1px solid #cfd8df; border-radius: 6px; background: #ffffff; font: inherit; font-size: 12px; }
+.accommodation-form .topn-row select:disabled { opacity: 0.5; }
