@@ -45,3 +45,4 @@
 .accommodation-form .topn-row label.check { display: flex; align-items: center; gap: 6px; font-size: 12px; }
 .accommodation-form .topn-row select { min-height: 30px; padding: 0 6px; border: 1px solid #cfd8df; border-radius: 6px; background: #ffffff; font: inherit; font-size: 12px; }
 .accommodation-form .topn-row select:disabled { opacity: 0.5; }
+.accommodation-form .topn-row select { width: auto; }
