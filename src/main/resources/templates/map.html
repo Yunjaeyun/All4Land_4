@@ -242,7 +242,7 @@
                     strokeColor: "#ffffff",
                     strokeOpacity: 0.75,
                     strokeWeight: 0.45,
-                    clickable: false
+                    clickable: document.body.dataset.activeMenu === "accommodation"
                 };
             });
             map.data.setMap(map);
@@ -279,10 +279,25 @@
             return response.json();
         }
 
+        const boroughBounds = new Map();
+        function extendBounds(bounds, coordinates) {
+            if (typeof coordinates[0] === "number") {
+                bounds.extend({ lat: coordinates[1], lng: coordinates[0] });
+                return;
+            }
+            coordinates.forEach((child) => extendBounds(bounds, child));
+        }
+
         try {
             const geojson = await loadThemes();
             metadata = geojson.metadata;
             map.data.addGeoJson(geojson);
+            geojson.features.forEach((feature) => {
+                const borough = feature.properties.borough;
+                const bounds = boroughBounds.get(borough) || new google.maps.LatLngBounds();
+                extendBounds(bounds, feature.geometry.coordinates);
+                boroughBounds.set(borough, bounds);
+            });
             checkboxes.forEach((checkbox) => checkbox.disabled = false);
             selectTheme("safety");
             status.hidden = true;
@@ -307,6 +322,62 @@
         map.addListener("zoom_changed", suspendRendering);
         map.addListener("dragstart", suspendRendering);
         map.addListener("idle", resumeRendering);
+        map.data.addListener("click", (event) => {
+            if (document.body.dataset.activeMenu !== "accommodation") return;
+            const borough = event.feature.getProperty("borough");
+            const bounds = boroughBounds.get(borough);
+            window.dispatchEvent(new CustomEvent("accommodation:borough-click", {
+                detail: { borough, bounds: bounds && !bounds.isEmpty() ? bounds.toJSON() : null }
+            }));
+        });
+
+        const boroughFeatures = new Map();
+        map.data.forEach((feature) => {
+            const borough = feature.getProperty("borough");
+            if (!boroughFeatures.has(borough)) boroughFeatures.set(borough, []);
+            boroughFeatures.get(borough).push(feature);
+        });
+        const boroughTip = new google.maps.InfoWindow({ disableAutoPan: true, headerDisabled: true, pixelOffset: new google.maps.Size(0, -8) });
+        let boroughCounts = null;
+        fetch("/api/accommodations/borough-counts")
+            .then((response) => (response.ok ? response.json() : null))
+            .then((counts) => { boroughCounts = counts; })
+            .catch(() => {});
+        let hoveredBorough = null;
+        function highlightBorough(borough) {
+            (boroughFeatures.get(hoveredBorough) || []).forEach((feature) => map.data.revertStyle(feature));
+            hoveredBorough = borough;
+            (boroughFeatures.get(borough) || []).forEach((feature) => map.data.overrideStyle(feature, { fillOpacity: 0.92 }));
+        }
+        map.data.addListener("mouseover", (event) => {
+            if (document.body.dataset.activeMenu !== "accommodation") return;
+            const borough = event.feature.getProperty("borough");
+            if (borough !== hoveredBorough) {
+                highlightBorough(borough);
+                const label = document.createElement("div");
+                label.style.cssText = "padding:2px 4px;";
+                const name = document.createElement("div");
+                name.textContent = borough;
+                name.style.cssText = "font-size:12px;font-weight:700;color:#1d2d39;";
+                label.append(name);
+                if (boroughCounts) {
+                    const count = document.createElement("div");
+                    count.textContent = `숙소 ${(boroughCounts[borough] ?? 0).toLocaleString("ko-KR")}개`;
+                    count.style.cssText = "font-size:11px;color:#40505c;";
+                    label.append(count);
+                }
+                boroughTip.setContent(label);
+                boroughTip.open(map);
+            }
+            boroughTip.setPosition(event.latLng);
+        });
+        map.data.addListener("mousemove", (event) => {
+            if (hoveredBorough) boroughTip.setPosition(event.latLng);
+        });
+        map.data.addListener("mouseout", () => {
+            highlightBorough(null);
+            boroughTip.close();
+        });
     }
 
     window.gm_authFailure = () => {

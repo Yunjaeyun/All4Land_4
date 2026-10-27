@@ -11,6 +11,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
@@ -27,15 +28,16 @@ class AccommodationServiceTests {
 
     private static AccommodationSearchRequest request(BigDecimal minPrice, BigDecimal maxPrice,
                                                       AccommodationSort sort, Integer page, Integer size) {
-        return new AccommodationSearchRequest(null, null, minPrice, maxPrice, null, null, null, null, null, sort, page, size,null,null);
+        return new AccommodationSearchRequest(null, null, minPrice, maxPrice, null, null, null, null, null,
+                sort, page, size, null);
     }
-    
-    private static AccommodationSearchRequest topRequest(Integer topN) {
+
+    private static AccommodationSearchRequest safestRequest(Integer page, Integer size) {
         return new AccommodationSearchRequest(null, null, null, null, null, null, null, null, null,
-                null, null, null, true, topN);
+                null, page, size, true);
     }
-    
-    private static Accommodation accommodation(long id) {
+
+    private static Accommodation accommodation() {
         return Accommodation.builder()
                 .name("Camden · 전체 집 · 침실 1개")
                 .roomType(RoomType.ENTIRE_HOME)
@@ -47,7 +49,7 @@ class AccommodationServiceTests {
                 .isSuperhost(false)
                 .build();
     }
-    
+
     @Test
     void searchRejectsMinPriceAboveMaxPrice() {
         var request = request(new BigDecimal("500"), new BigDecimal("100"), null, null, null);
@@ -60,17 +62,29 @@ class AccommodationServiceTests {
     @SuppressWarnings("unchecked")
     void searchUsesDefaultPagingAndPriceSortWhenNotGiven() {
         when(repository.findAll(any(Specification.class), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 30), 0));
 
         service.search(request(null, null, null, null, null));
 
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
         verify(repository).findAll(any(Specification.class), pageable.capture());
         assertEquals(0, pageable.getValue().getPageNumber());
-        assertEquals(20, pageable.getValue().getPageSize());
-        assertEquals(org.springframework.data.domain.Sort.Direction.ASC,
-                pageable.getValue().getSort().getOrderFor("priceTotal").getDirection());
+        assertEquals(30, pageable.getValue().getPageSize());
+        assertEquals(Sort.Direction.ASC, pageable.getValue().getSort().getOrderFor("priceTotal").getDirection());
         assertNotNull(pageable.getValue().getSort().getOrderFor("id"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void searchUsesRequestedPageSize() {
+        when(repository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 50), 0));
+
+        service.search(request(null, null, null, null, 50));
+
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).findAll(any(Specification.class), pageable.capture());
+        assertEquals(50, pageable.getValue().getPageSize());
     }
 
     @Test
@@ -99,41 +113,32 @@ class AccommodationServiceTests {
         assertNull(response.items().get(0).lsoaName());
         assertNull(response.items().get(0).safetyLevel());
     }
-    
+
     @Test
     @SuppressWarnings("unchecked")
-    void safestTopReturnsRankedItemsLimitedToTopN() {
+    void safestOrderUsesDefaultSizeAndUnsortedPageable() {
         when(repository.findAll(any(Specification.class), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(accommodation(1L), accommodation(2L)), PageRequest.of(0, 3), 2));
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 30), 0));
 
-        AccommodationSearchResponse response = service.search(topRequest(3));
+        service.search(safestRequest(null, null));
 
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
         verify(repository).findAll(any(Specification.class), pageable.capture());
-        assertEquals(3, pageable.getValue().getPageSize());
+        assertEquals(30, pageable.getValue().getPageSize());
+        assertTrue(pageable.getValue().getSort().isUnsorted());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void safestOrderNumbersRanksFromPageOffset() {
+        when(repository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(accommodation(), accommodation()), PageRequest.of(1, 3), 8));
+
+        AccommodationSearchResponse response = service.search(safestRequest(1, 3));
+
         assertEquals(2, response.items().size());
-        assertEquals(1, response.items().get(0).rank());
-        assertEquals(2, response.items().get(1).rank());
-        assertFalse(response.hasNext());
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    void safestTopDefaultsToTen() {
-        when(repository.findAll(any(Specification.class), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
-
-        service.search(topRequest(null));
-
-        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
-        verify(repository).findAll(any(Specification.class), pageable.capture());
-        assertEquals(10, pageable.getValue().getPageSize());
-    }
-
-    @Test
-    void safestTopOutOfRangeIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> service.search(topRequest(0)));
-        assertThrows(IllegalArgumentException.class, () -> service.search(topRequest(51)));
-        verifyNoInteractions(repository);
+        assertEquals(4, response.items().get(0).rank());
+        assertEquals(5, response.items().get(1).rank());
+        assertTrue(response.hasNext());
     }
 }

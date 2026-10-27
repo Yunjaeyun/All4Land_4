@@ -1,0 +1,367 @@
+[33mcommit 52d7138f6f7523d76b77798d67433b4c59487896[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: haewonee <godnjs5870@gmail.com>
+Date:   Tue Oct 27 13:22:28 2026 +0900
+
+    fix: 목록 UI 정리
+
+[33mcommit 3abd4e2a0aa6adca9f1ba3229da42d71b05e1719[m
+Author: haewonee <godnjs5870@gmail.com>
+Date:   Tue Oct 27 13:04:06 2026 +0900
+
+    fix: 정보카드에 로드뷰 추가
+
+[33mcommit f45674635d086e5bd5e4ecd4fca416f8aae71a43[m
+Author: haewonee <godnjs5870@gmail.com>
+Date:   Tue Oct 27 11:42:48 2026 +0900
+
+    fix: UI 수정
+
+[33mcommit 58c15e582a8c63e3fb0f9c18cf4a89fceaf1dcee[m
+Author: haewonee <godnjs5870@gmail.com>
+Date:   Tue Oct 27 11:36:49 2026 +0900
+
+    fix: 디자인 수정
+
+[33mcommit 702a35e7bca9e88b463c75f55e71380ea618f961[m
+Author: haewonee <godnjs5870@gmail.com>
+Date:   Tue Oct 27 11:23:42 2026 +0900
+
+    fix: 가격 단위 추가
+
+[33mcommit 70ff1dc63b8cbeae917759c487de2670053d4d9a[m
+Author: haewonee <godnjs5870@gmail.com>
+Date:   Tue Oct 27 11:09:52 2026 +0900
+
+    fix: 숙소 개수 표시 수정
+
+[33mcommit 195891ab1765c7626d3c27a393e48be0edcba494[m
+Author: haewonee <godnjs5870@gmail.com>
+Date:   Tue Oct 27 10:43:09 2026 +0900
+
+    fix: 숙소 평일,주말 묶기 조건 수정
+
+[33mcommit 5abb34e5d680328f343dd2a341f576f97174b74b[m
+Author: haewonee <godnjs5870@gmail.com>
+Date:   Tue Oct 27 10:05:00 2026 +0900
+
+    feat: 숙소 검색 안전도 칩과 상위 N개 UI 추가
+
+[33mcommit 15dc7b1972edb7be7e31374d6a7c245c79070f2d[m
+Author: haewonee <godnjs5870@gmail.com>
+Date:   Tue Oct 27 09:44:14 2026 +0900
+
+    feat: 안전한 숙소 상위 N개 조회 기능 추가(필터링)
+
+[33mcommit 6183c681b15181eff406fde837beb898434fac61[m[33m ([m[1;31mupstream/main[m[33m, [m[1;31mupstream/HEAD[m[33m)[m
+Author: Yunjaeyun <jy8767@naver.com>
+Date:   Mon Oct 26 22:02:40 2026 +0900
+
+    feat: 숙소 조건 검색 기능 추가
+
+[33mcommit c2431e90d52b2379e131c2f648d6364b91d9238f[m
+Merge: a455440 67293b9
+Author: mir <65425885+lalala5772@users.noreply.github.com>
+Date:   Sun Oct 25 19:07:43 2026 +0900
+
+    Merge pull request #6 from lalala5772/main
+    
+    feat: 맛집 목록·삭제 기능 추가 및 로컬 실행 환경 개선
+
+[33mcommit 67293b9a240401402b7c3570a5e731aa13cdff84[m
+Merge: 6e5935f 283f3cc
+Author: mir <65425885+lalala5772@users.noreply.github.com>
+Date:   Sun Oct 25 19:01:33 2026 +0900
+
+    Merge pull request #3 from lalala5772/feat/restaurant-delete
+    
+    feat: 맛집 목록 표시 및 삭제 기능 추가
+
+[33mcommit 6e5935f3cc96d25063d21ff553c530262b78f81f[m
+Merge: a455440 d7a2f2b
+Author: mir <65425885+lalala5772@users.noreply.github.com>
+Date:   Sun Oct 25 18:47:04 2026 +0900
+
+    Merge pull request #1 from lalala5772/chore/local-env-setup
+    
+    chore: 로컬 실행 환경 설정 (.env 로딩, IntelliJ 실행 구성)
+
+[33mcommit 283f3cc6c80733dfee14717467596e0c0ce3eca0[m
+Merge: 3256942 d7a2f2b
+Author: lalala5772 <65425885+lalala5772@users.noreply.github.com>
+Date:   Sun Oct 25 09:36:56 2026 +0000
+
+    Merge branch 'chore/local-env-setup' into feat/restaurant-delete
+
+[33mcommit d7a2f2b045efb5496764228b234962c5e43fdfd9[m
+Author: lalala5772 <65425885+lalala5772@users.noreply.github.com>
+Date:   Sun Oct 25 09:36:54 2026 +0000
+
+    docs: README 로컬 실행 안내 간소화
+
+[33mcommit 3256942321d751854d5c3e51785de441f82aff88[m
+Author: lalala5772 <65425885+lalala5772@users.noreply.github.com>
+Date:   Sun Oct 25 09:30:41 2026 +0000
+
+    feat: 맛집 목록 표시 및 삭제 기능 추가
+    
+    - DELETE /api/restaurants/{id} 추가 (없는 맛집은 404)
+    - 맛집 관리 패널에 등록된 맛집 목록 표시, 항목 클릭 시 지도 이동 및 정보창 열기
+    - 목록의 삭제 버튼으로 확인 후 DB 삭제, 마커와 목록에서 제거
+    - 삭제 서비스 단위 테스트 추가
+
+[33mcommit c7d0b2763ebb0aba99f27e41ab0c8999f0a64865[m
+Author: lalala5772 <65425885+lalala5772@users.noreply.github.com>
+Date:   Sun Oct 25 08:50:34 2026 +0000
+
+    chore: Java 21이 없을 때 Gradle이 자동으로 내려받도록 foojay 리졸버 추가
+
+[33mcommit 6f2b994455f661703a14a15ed533b54ce7d638d6[m
+Author: lalala5772 <65425885+lalala5772@users.noreply.github.com>
+Date:   Sun Oct 25 08:34:19 2026 +0000
+
+    fix: Apple Silicon에서 postgis 이미지 실행되도록 platform 지정
+
+[33mcommit 6acdfe01aea5203b8eb84006d6d60277f1e489d3[m
+Author: lalala5772 <65425885+lalala5772@users.noreply.github.com>
+Date:   Sun Oct 25 03:58:10 2026 +0000
+
+    chore: IntelliJ 로컬 실행 구성 및 .env 기반 환경변수 로딩 추가
+    
+    - application.yml이 프로젝트 루트의 .env를 읽고, DB 접속값을 POSTGRES_*/DB_PORT에서 기본값으로 만든다
+      (DB_URL 등 실제 환경변수가 있으면 그 값이 우선하므로 운영 compose 설정은 그대로)
+    - .run/에 IntelliJ Application 실행 구성(기본, map-only) 추가
+    - .env.example에 GOOGLE_MAPS_API_KEY 추가, README에 IntelliJ 실행 방법 정리
+
+[33mcommit a45544097984776612c6dbd2bf64d1ace039fb60[m
+Merge: 1985cb5 61e9c15
+Author: Choi jaewon <111185645+jaewon3640@users.noreply.github.com>
+Date:   Sun Oct 25 01:18:13 2026 +0900
+
+    Merge pull request #5 from Yunjaeyun/fix/schema-auto-patch
+    
+    Fix/schema auto patch
+
+[33mcommit 61e9c155bb459d45580c81eee59a46413e43dd49[m[33m ([m[1;31mupstream/fix/schema-auto-patch[m[33m)[m
+Author: jaewon3640 <jaewon3640@naver.com>
+Date:   Sun Oct 25 01:16:44 2026 +0900
+
+    feat: 맛집 관리 메뉴에서 지도 음식점 아이콘 표시
+
+[33mcommit 6974f6da5ab934324a251be2260552429f6ba478[m
+Author: jaewon3640 <jaewon3640@naver.com>
+Date:   Sun Oct 25 01:16:20 2026 +0900
+
+    fix: 시작 시 기존 컬럼 스키마 자동 보정 추가
+
+[33mcommit 1985cb5899687f9d3fc5f0de54db7f224e764dff[m
+Author: jaewon3640 <jaewon3640@naver.com>
+Date:   Sun Oct 25 00:15:58 2026 +0900
+
+    feat: 맛집 관리 메뉴 분리 및 내 레이어와 지도 클릭 충돌 수정
+
+[33mcommit 1dcd12bdd9bf247494a28eeb661a5eb36661e8ca[m
+Merge: 857e9b9 5fe8811
+Author: jaewon3640 <jaewon3640@naver.com>
+Date:   Sat Oct 24 23:53:37 2026 +0900
+
+    Merge branch 'main' of https://github.com/Yunjaeyun/All4Land_4 into feat/restaurant-add
+
+[33mcommit 857e9b96123fa1a8ddc75302906507e05f15c8c7[m
+Author: jaewon3640 <jaewon3640@naver.com>
+Date:   Sat Oct 24 23:51:19 2026 +0900
+
+    feat: 지도에 맛집 레이어와 등록 폼 추가
+
+[33mcommit 3b05582b66ffc93ee4cfed19bd404a09cccd3060[m
+Author: jaewon3640 <jaewon3640@naver.com>
+Date:   Sat Oct 24 23:50:58 2026 +0900
+
+    feat: 맛집 추가 및 목록 조회 API 구현
+
+[33mcommit 6d0bda1b212e7b2a16a1cf1425ece8e6304a805e[m
+Author: jaewon3640 <jaewon3640@naver.com>
+Date:   Sat Oct 24 23:50:38 2026 +0900
+
+     feat: 치안 구역(safety_zones) 초기 데이터 적재 추가
+
+[33mcommit 5fe8811ddf2bc972e0b589579aca6850651789bb[m
+Merge: 8311ec6 2fcd97c
+Author: Choi jaewon <111185645+jaewon3640@users.noreply.github.com>
+Date:   Sat Oct 24 23:35:33 2026 +0900
+
+    Merge pull request #4 from Yunjaeyun/custom-layer
+    
+    Merge remote-tracking branch 'origin/custom-layer' into feat/restaurant-add
+
+[33mcommit 2fcd97cf74c81cd835c1b7f50aa23de0137e4932[m[33m ([m[1;31mupstream/custom-layer[m[33m)[m
+Author: hs8469 <gud6202@gmail.com>
+Date:   Sat Oct 24 02:31:39 2026 +0900
+
+    fix: 지도 스크립트 선언 및 통합 테스트 자원 관리 개선
+
+[33mcommit 6dcf9ce58391c760f41875c955a00d54ef76a080[m
+Author: hs8469 <gud6202@gmail.com>
+Date:   Sat Oct 24 02:28:36 2026 +0900
+
+    feat: 사용자 지정 레이어 기능 및 주제도 지도 통합
+
+[33mcommit 8311ec69d36674a2213fbe7781e025953809e27f[m
+Merge: 1f37d2b 9b8593e
+Author: Choi jaewon <111185645+jaewon3640@users.noreply.github.com>
+Date:   Thu Oct 22 00:19:25 2026 +0900
+
+    Merge pull request #3 from Yunjaeyun/chore/simplify-ci
+    
+    chore: CI 워크플로 제거, 배포만 남김
+
+[33mcommit 9b8593ebb45050acf7b7cee0a971d3977a01bef8[m
+Author: jaewon3640 <jaewon3640@naver.com>
+Date:   Thu Oct 22 00:11:47 2026 +0900
+
+    chore: CI 워크플로 제거, 배포만 남김
+    
+    - ci.yml 삭제, deploy.yml의 test 단계 제거
+    - 컴파일 오류는 이미지 빌드 단계에서 걸러진다
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+[33mcommit 1f37d2bd0395a5f2c6e3e023f0a6468db7bb5397[m
+Merge: 46be8d3 e8a092f
+Author: Choi jaewon <111185645+jaewon3640@users.noreply.github.com>
+Date:   Thu Oct 22 00:06:33 2026 +0900
+
+    Merge pull request #2 from Yunjaeyun/chore/gcp-deploy
+    
+    chore: GCP e2-micro 무료 등급 배포 구성 추가
+
+[33mcommit e8a092f13b28951200a2e2c1f229da88883f0219[m[33m ([m[1;31mupstream/chore/gcp-deploy[m[33m)[m
+Author: jaewon3640 <jaewon3640@naver.com>
+Date:   Thu Oct 22 00:01:54 2026 +0900
+
+    chore: GitHub Actions CI/CD 추가
+    
+    - PR마다 빌드·테스트(ci.yml)
+    - main 머지 시 GHCR 이미지 빌드 후 VM에 SSH 배포(deploy.yml)
+    - prod compose가 GHCR 이미지를 사용하도록 변경, IMAGE_TAG로 롤백 지원
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+[33mcommit 930f9933fa91eaf8a542bd070bba6ef0dc169c6f[m
+Merge: 4b9ea3f 46be8d3
+Author: jaewon3640 <jaewon3640@naver.com>
+Date:   Wed Oct 21 23:59:50 2026 +0900
+
+    Merge remote-tracking branch 'origin/main' into chore/gcp-deploy
+    
+    # Conflicts:
+    #       README.md
+
+[33mcommit 46be8d3aee1b6b603e4c2cd976a164f627f4d654[m
+Author: Richard Kang <rich@Richards-MacBook-Pro.local>
+Date:   Wed Oct 21 23:52:31 2026 +0900
+
+    feat: add four London choropleth layers
+
+[33mcommit 4b9ea3ffa97dd2c0588fc8d9b82fd9a093139258[m
+Author: jaewon3640 <jaewon3640@naver.com>
+Date:   Wed Oct 21 00:33:42 2026 +0900
+
+    chore: GCP e2-micro 무료 등급 배포 구성 추가
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+[33mcommit e0e72cb93d8d903390e8433577b7ecdcd0b06f73[m
+Merge: 4b7b8bb b82f1e3
+Author: Choi jaewon <111185645+jaewon3640@users.noreply.github.com>
+Date:   Tue Oct 20 23:33:21 2026 +0900
+
+    Merge pull request #1 from haewonee/main
+    
+    feat: 엔티티 및 Docker PostGIS 환경 구성
+
+[33mcommit b82f1e37bc6eb18311322a94293a11969088f6a7[m
+Author: haewonee <godnjs5870@gmail.com>
+Date:   Tue Oct 20 15:40:21 2026 +0900
+
+    refactor: 패키지 경로 변경
+
+[33mcommit 10d3ac2ff7f3d69eb813ad5191d380385a965fcd[m
+Author: haewonee <godnjs5870@gmail.com>
+Date:   Tue Oct 20 15:06:09 2026 +0900
+
+    docs: .env.example DB 이름을 all4land로 수정
+
+[33mcommit 4c90d37938854f1650f1f42c0b3c8164a1d72cfe[m
+Author: haewonee <godnjs5870@gmail.com>
+Date:   Tue Oct 20 14:54:36 2026 +0900
+
+    feat: ERD 도메인 엔티티 추가
+
+[33mcommit 7e4b12f9aad95d7d622676b7f837a924a80882fe[m
+Author: haewonee <godnjs5870@gmail.com>
+Date:   Tue Oct 20 14:54:24 2026 +0900
+
+    chore: Docker Compose로 PostgreSQL 17 + PostGIS 환경 구성
+
+[33mcommit a25faa05c244fd6f7e4bf7d144884b4941712ccd[m
+Author: haewonee <godnjs5870@gmail.com>
+Date:   Tue Oct 20 14:54:12 2026 +0900
+
+    chore: Lombok annotation processor 설정 추가
+
+[33mcommit 5634dc7d2174f8a678900c781d69bbebe4056ad1[m
+Author: DESKTOP-M3LPO33\최진규 <godnjs5870@gmail.com>
+Date:   Tue Oct 20 13:53:01 2026 +0900
+
+    feat: BaseEntity 추가 && 프로젝트 환경 세팅
+
+[33mcommit 4b7b8bbc3572f841b374048acac1ac39f8f85cb4[m
+Author: Richard Kang <rich@Richards-MacBook-Pro.local>
+Date:   Tue Sep 22 08:20:11 2026 +0900
+
+    perf: optimize map layer rendering
+
+[33mcommit 8301475727dd2812a370995f7869bf28549f2869[m
+Author: Richard Kang <rich@Richards-MacBook-Pro.local>
+Date:   Tue Sep 22 00:31:25 2026 +0900
+
+    feat: add London safety and Airbnb map layers
+
+[33mcommit bfd8dad119c163b3235edbd01bcc5beca50bb95b[m
+Author: Choi jaewon <111185645+jaewon3640@users.noreply.github.com>
+Date:   Sun Sep 20 00:39:06 2026 +0900
+
+    Remove Google Maps API key from application.yml
+    
+    Removed the Google Maps API key from the configuration file for security reasons.
+
+[33mcommit ed4d079278ddf073437069208f548b67fc5a85a7[m
+Merge: 7507612 3e0126d
+Author: jaewon3640 <jaewon3640@naver.com>
+Date:   Sun Sep 20 00:35:09 2026 +0900
+
+    Merge branch 'main' of https://github.com/Yunjaeyun/All4Land_4
+
+[33mcommit 75076127a583f1c449001f0afb2ee315a109ac75[m
+Author: jaewon3640 <jaewon3640@naver.com>
+Date:   Sun Sep 20 00:32:53 2026 +0900
+
+    구글 맵 지도 표시 추가
+
+[33mcommit 3e0126dba7ffaa77fb6db507607a6958a574226f[m
+Author: Yunjaeyun <123050340+Yunjaeyun@users.noreply.github.com>
+Date:   Wed Sep 16 21:31:15 2026 +0900
+
+    Update README.md
+
+[33mcommit 4d49723f9da63fc6949e1d3e7f06a93300e43514[m
+Author: Yunjaeyun <123050340+Yunjaeyun@users.noreply.github.com>
+Date:   Wed Sep 16 21:30:30 2026 +0900
+
+    Update README.md
+
+[33mcommit e157914f0faff744e6bf9e902752e9c0869b39b9[m
+Author: Yunjaeyun <123050340+Yunjaeyun@users.noreply.github.com>
+Date:   Wed Sep 16 21:25:59 2026 +0900
+
+    Initial commit
