@@ -40,11 +40,11 @@
 .accommodation-info .acc-stat-label { color: #78858e; font-size: 10px; }
 .accommodation-info .acc-stat-value { font-size: 13px; color: #1d2d39; }
 .accommodation-info .acc-meta { margin-top: 8px; color: #40505c; font-size: 11px; }
-.accommodation-list-section { margin-top: 14px; padding-top: 12px; border-top: 1px solid #e3e8ec; }
+.accommodation-list-section { margin-top: 14px; padding-top: 12px; border-top: 1px solid #e3e8ec; min-width: 0; }
 .accommodation-list-section h2 { margin: 0 0 6px; color: #1d2d39; font-size: 13px; }
 .accommodation-list-section h2 span { color: #78858e; font-weight: 400; }
 .accommodation-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.accommodation-list .accommodation-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 1px solid #e3e8ec; border-radius: 8px; background: #ffffff; color: #1d2d39; cursor: pointer; font: inherit; text-align: left; }
+.accommodation-list .accommodation-item { display: flex; align-items: center; gap: 10px; box-sizing: border-box; width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid #e3e8ec; border-radius: 8px; background: #ffffff; color: #1d2d39; cursor: pointer; font: inherit; text-align: left; }
 .accommodation-list .accommodation-item:hover { border-color: #345f82; }
 .accommodation-list .accommodation-item .acc-badge { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; background: #345f82; color: #ffffff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 .accommodation-list .accommodation-item .acc-badge[hidden] { display: none; }
@@ -71,5 +71,9 @@
 .accommodation-form .topn-row select { min-height: 30px; padding: 0 6px; border: 1px solid #cfd8df; border-radius: 6px; background: #ffffff; font: inherit; font-size: 12px; }
 .accommodation-form .topn-row select:disabled { opacity: 0.5; }
 .accommodation-form .topn-row select { width: auto; }
+.accommodation-form details.more-filters { margin: 0 0 10px; }
+.accommodation-form details.more-filters summary { margin-bottom: 6px; color: #40505c; font-size: 12px; font-weight: 700; cursor: pointer; }
+.accommodation-form details.more-filters[open] summary { margin-bottom: 8px; }
+.accommodation-form details.more-filters > label.check { margin-top: 10px; }
 .accommodation-info .acc-route { display: block; margin-top: 10px; padding: 8px; border-radius: 6px; background: #345f82; color: #ffffff; font-size: 12px; font-weight: 700; text-align: center; text-decoration: none; }
 .accommodation-info .acc-route:hover { background: #2a4e69; }

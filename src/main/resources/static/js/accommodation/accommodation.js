@@ -299,7 +299,7 @@ function initAccommodations(map) {
             nextPage = body.page + 1;
             count.textContent = topToggle.checked
                 ? `안전한 숙소 상위 ${formatNumber(entries.length)}개`
-                : `검색 결과 ${formatNumber(entries.length)}곳`;
+                : `${formatNumber(entries.length)}곳`;
             empty.hidden = body.total > 0;
             moreButton.hidden = !body.hasNext || topToggle.checked;
             message.hidden = true;
@@ -332,7 +332,8 @@ function initAccommodations(map) {
         if (!active) infoWindow.close();
         if (active && firstOpen) {
             firstOpen = false;
-            search(0);
+            count.textContent = "";
+            showMessage("조건을 고르고 검색 버튼을 눌러 주세요.");
         }
     });
     syncTopMode();
