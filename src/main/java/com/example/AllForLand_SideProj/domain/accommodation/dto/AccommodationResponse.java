@@ -22,9 +22,14 @@ public record AccommodationResponse(
         BigDecimal distanceMetroKm,
         String dayType,
         String lsoaName,
-        Integer safetyLevel
+        Integer safetyLevel,
+        Integer rank
 ) {
-    public static AccommodationResponse from(Accommodation a) {
+	
+	public static AccommodationResponse from(Accommodation a) {
+	        return from(a, null);
+	    }
+    public static AccommodationResponse from(Accommodation a, Integer rank) {
         SafetyZone zone = a.getSafetyZone();
         return new AccommodationResponse(
                 a.getId(), a.getName(), a.getRoomType(), a.getPriceTotal(),
@@ -32,7 +37,8 @@ public record AccommodationResponse(
                 a.getCleanlinessScore(), a.getSatisfactionScore(), a.getIsSuperhost(),
                 a.getDistanceCityCenterKm(), a.getDistanceMetroKm(), a.getDayType(),
                 zone == null ? null : zone.getLsoaName(),
-                zone == null ? null : zone.getSafetyLevel()
+                zone == null ? null : zone.getSafetyLevel(),
+                rank
         );
     }
 }

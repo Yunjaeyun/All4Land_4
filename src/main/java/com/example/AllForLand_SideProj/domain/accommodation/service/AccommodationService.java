@@ -18,6 +18,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.stream.IntStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +29,8 @@ import java.util.List;
 public class AccommodationService {
 
     static final int DEFAULT_SIZE = 20;
+    static final int DEFAULT_TOP_N = 10;
+    static final int MAX_TOP_N = 50;
 
     private final AccommodationRepository accommodationRepository;
 
@@ -37,6 +40,9 @@ public class AccommodationService {
             throw new IllegalArgumentException("최소 가격이 최대 가격보다 클 수 없습니다.");
         }
 
+        if(Boolean.TRUE.equals(request.safestTop())) {
+        	return searchSafestTop(request);
+        }
         int page = request.page() == null ? 0 : request.page();
         int size = request.size() == null ? DEFAULT_SIZE : request.size();
         AccommodationSort sort = request.sort() == null ? AccommodationSort.PRICE_ASC : request.sort();
@@ -47,8 +53,27 @@ public class AccommodationService {
         List<AccommodationResponse> items = result.getContent().stream().map(AccommodationResponse::from).toList();
         return new AccommodationSearchResponse(result.getTotalElements(), page, size, result.hasNext(), items);
     }
+    
+    private AccommodationSearchResponse searchSafestTop(AccommodationSearchRequest request) {
+        int topN = request.topN() == null ? DEFAULT_TOP_N : request.topN();
+        if (topN < 1 || topN > MAX_TOP_N) {
+            throw new IllegalArgumentException("상위 개수는 1~50 사이로 입력해 주세요.");
+        }
+
+        Page<Accommodation> result = accommodationRepository.findAll(
+                toSpecification(request), PageRequest.of(0, topN));
+
+        List<Accommodation> rows = result.getContent();
+        List<AccommodationResponse> items = IntStream.range(0, rows.size())
+                .mapToObj(index -> AccommodationResponse.from(rows.get(index), index + 1))
+                .toList();
+        return new AccommodationSearchResponse(result.getTotalElements(), 0, topN, false, items);
+    }
 
     static Specification<Accommodation> toSpecification(AccommodationSearchRequest request) {
+    	
+    	boolean safestTop = Boolean.TRUE.equals(request.safestTop());
+    	  
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             // 치안 등급·구역명 조건에만 필요하지만 LEFT JOIN이라 구역 밖 숙소도 빠지지 않는다
@@ -83,6 +108,17 @@ public class AccommodationService {
             }
             if (request.minSatisfaction() != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("satisfactionScore"), request.minSatisfaction()));
+            }
+            
+            if (safestTop) {
+                predicates.add(cb.isNotNull(zone.get("id")));
+                if (query.getResultType() != Long.class) {
+                    query.orderBy(
+                            cb.asc(zone.get("safetyLevel")),
+                            cb.asc(zone.get("crimeRate")),
+                            cb.asc(root.get("priceTotal")),
+                            cb.asc(root.get("id")));
+                }
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };
