@@ -27,11 +27,19 @@
 .accommodation-list-section h2 { margin: 0 0 6px; color: #1d2d39; font-size: 13px; }
 .accommodation-list-section h2 span { color: #78858e; font-weight: 400; }
 .accommodation-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.accommodation-list .accommodation-item { width: 100%; padding: 7px 9px; border: 1px solid #e3e8ec; border-radius: 6px; background: #ffffff; color: #1d2d39; cursor: pointer; font: inherit; text-align: left; }
+.accommodation-list .accommodation-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 1px solid #e3e8ec; border-radius: 8px; background: #ffffff; color: #1d2d39; cursor: pointer; font: inherit; text-align: left; }
 .accommodation-list .accommodation-item:hover { border-color: #345f82; }
-.accommodation-list .accommodation-item strong, .accommodation-list .accommodation-item span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.accommodation-list .accommodation-item strong { font-size: 13px; }
-.accommodation-list .accommodation-item span { color: #78858e; font-size: 11px; }
+.accommodation-list .accommodation-item .acc-badge { flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; background: #345f82; color: #ffffff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.accommodation-list .accommodation-item .acc-badge[hidden] { display: none; }
+.accommodation-list .accommodation-item .acc-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.accommodation-list .accommodation-item .acc-body strong, .accommodation-list .accommodation-item .acc-body span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.accommodation-list .accommodation-item .acc-body strong { font-size: 13px; }
+.accommodation-list .accommodation-item .acc-dots { color: #345f82; font-size: 11px; letter-spacing: 1px; }
+.accommodation-list .accommodation-item .acc-meta { color: #78858e; font-size: 11px; }
+.accommodation-list .accommodation-item .acc-price { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; }
+.accommodation-list .accommodation-item .acc-price strong { font-size: 15px; color: #1d2d39; }
+.accommodation-list .accommodation-item .acc-price small { color: #78858e; font-size: 10px; }
+.accommodation-list .accommodation-item:hover { border-color: #345f82; }
 .accommodation-empty { margin: 0; color: #78858e; font-size: 12px; }
 .accommodation-panel .button.more { width: 100%; margin-top: 8px; }
 .accommodation-form fieldset.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; border: 0; min-width: 0; }
