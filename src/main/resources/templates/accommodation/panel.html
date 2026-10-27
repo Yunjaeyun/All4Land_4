@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
 <aside id="accommodation-panel" class="map-panel accommodation-panel" th:fragment="panel" aria-label="숙소 검색" hidden>
     <h1>숙소 검색</h1>
-    <p class="description">Airbnb 런던 숙소를 조건으로 찾습니다. '자치구 · 방 유형 · 침실 수'로 만든 이름을 씁니다.</p>
+    <p class="description">Airbnb 런던 숙소를 조건으로 찾습니다.</p>
     <form id="accommodation-form" class="accommodation-form">
         <label>검색어 (지역·이름)
             <input name="keyword" maxlength="100" placeholder="예: Camden" autocomplete="off">
@@ -23,43 +24,44 @@
                 <input name="maxPrice" type="number" min="0" step="1" inputmode="decimal">
             </label>
         </div>
-        <div class="two">
-            <label>방 유형
-                <select name="roomType">
-                    <option value="">전체</option>
-                    <option value="ENTIRE_HOME">전체 집</option>
-                    <option value="PRIVATE_ROOM">개인실</option>
-                    <option value="SHARED_ROOM">공용실</option>
-                </select>
-            </label>
-           <label>인원 (이상)
-                <input name="guests" type="number" min="1" max="20" step="1">
-            </label>
-        </div>
-        <div class="two">
-            <label>침실 (이상)
-                <input name="minBedrooms" type="number" min="0" max="20" step="1">
-            </label>
-            <label>최소 만족도 (0~100)
-                <input name="minSatisfaction" type="number" min="0" max="100" step="1">
-            </label>
-        </div>
-        <div class="two">
-            <label>정렬
-                <select name="sort">
-                    <option value="PRICE_ASC">가격 낮은순</option>
-                    <option value="PRICE_DESC">가격 높은순</option>
-                    <option value="SATISFACTION_DESC">만족도 높은순</option>
-                    <option value="CITY_CENTER_ASC">시내 가까운순</option>
-                    <option value="METRO_ASC">지하철 가까운순</option>
-                </select>
-            </label>
+        <label>방 유형
+            <select name="roomType">
+                <option value="">전체</option>
+                <option value="ENTIRE_HOME">전체 집</option>
+                <option value="PRIVATE_ROOM">개인실</option>
+                <option value="SHARED_ROOM">공용실</option>
+            </select>
+        </label>
+        <details class="more-filters">
+            <summary>상세 조건</summary>
+            <div class="two">
+                <label>인원 (이상)
+                    <input name="guests" type="number" min="1" max="20" step="1">
+                </label>
+                <label>침실 (이상)
+                    <input name="minBedrooms" type="number" min="0" max="20" step="1">
+                </label>
+            </div>
+            <div class="two">
+                <label>최소 만족도 (0~100)
+                    <input name="minSatisfaction" type="number" min="0" max="100" step="1">
+                </label>
+                <label>정렬
+                    <select name="sort">
+                        <option value="PRICE_ASC">가격 낮은순</option>
+                        <option value="PRICE_DESC">가격 높은순</option>
+                        <option value="SATISFACTION_DESC">만족도 높은순</option>
+                        <option value="CITY_CENTER_ASC">시내 가까운순</option>
+                        <option value="METRO_ASC">지하철 가까운순</option>
+                    </select>
+                </label>
+            </div>
             <label class="check">
                 <input name="superhostOnly" type="checkbox" value="true">
                 슈퍼호스트만
             </label>
-            </div>
-             <div class="topn-row">
+        </details>
+        <div class="topn-row">
             <label class="check">
                 <input id="accommodation-top-toggle" name="safestTop" type="checkbox" value="true">
                 안전한 숙소 상위

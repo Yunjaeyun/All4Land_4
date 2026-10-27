@@ -1,6 +1,3 @@
-/* 숙소 검색: 조건 검색(/api/accommodations/search) 결과를 목록과 지도 마커로 보여준다.
-   원본 데이터는 같은 숙소가 평일·주말 두 행으로 들어 있다. 좌표·방 유형·인원·침실이 같고
-   요일이 서로 다른 행이 짝을 이루면 한 카드로 묶고, 짝이 없는 행은 그 요일만 보이는 카드로 둔다. */
 const ACCOMMODATION_SAFETY_LABELS = ["매우 안전", "안전", "보통", "주의", "위험"];
 const ACCOMMODATION_ROOM_LABELS = { ENTIRE_HOME: "전체 집", PRIVATE_ROOM: "개인실", SHARED_ROOM: "공용실" };
 const ACCOMMODATION_DAY_LABELS = { weekday: "평일", weekend: "주말" };
@@ -18,7 +15,7 @@ function initAccommodations(map) {
     const topToggle = form.querySelector('[name="safestTop"]');
     const topSelect = form.querySelector('[name="topN"]');
     const sortSelect = form.querySelector('[name="sort"]');
-    const infoWindow = new google.maps.InfoWindow();
+    const infoWindow = new google.maps.InfoWindow({ maxWidth: 320 });
     const entries = [];
     const byKey = new Map();
     let query = null;
@@ -40,28 +37,20 @@ function initAccommodations(map) {
         return level ? ACCOMMODATION_SAFETY_LABELS[level - 1] : null;
     }
 
-
     function syncTopMode() {
         const top = topToggle.checked;
         topSelect.disabled = !top;
         sortSelect.disabled = top;
         if (top) moreButton.hidden = true;
     }
+
     function groupKey(item) {
         return [item.latitude, item.longitude, item.roomType, item.maxGuests, item.bedrooms].join("|");
     }
 
     function dayPrice(entry, day) {
         const item = entry.items.find((row) => row.dayType === day);
-        return item ? formatNumber(item.priceTotal, 2) : null;
-    }
-
-
-    function priceLine(entry) {
-        return Object.keys(ACCOMMODATION_DAY_LABELS)
-            .filter((day) => dayPrice(entry, day) !== null)
-            .map((day) => `${ACCOMMODATION_DAY_LABELS[day]} ${dayPrice(entry, day)}`)
-            .join(" / ");
+        return item ? `£${formatNumber(item.priceTotal, 2)}` : null;
     }
 
     function displayName(entry) {
@@ -69,44 +58,95 @@ function initAccommodations(map) {
         return entry.rank ? `${entry.rank}. ${name}` : name;
     }
 
-    function summaryText(entry) {
+    function priceMain(entry) {
+        const day = entry.items.some((row) => row.dayType === "weekday") ? "weekday" : "weekend";
+        return dayPrice(entry, day);
+    }
+
+    function dayLabel(entry) {
+        const hasWeekday = dayPrice(entry, "weekday") !== null;
+        const hasWeekend = dayPrice(entry, "weekend") !== null;
+        if (hasWeekday && hasWeekend) return "평일 · 주말";
+        return hasWeekday ? "평일 기준" : "주말 기준";
+    }
+
+    function el(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined && text !== null) node.textContent = text;
+        return node;
+    }
+
+    function stat(label, value) {
+        const box = el("div", "acc-stat");
+        box.append(el("span", "acc-stat-label", label), el("strong", "acc-stat-value", value));
+        return box;
+    }
+
+    function showStreetView(target, entry) {
         const base = entry.items[0];
-        return [
-            `총가격 ${priceLine(entry)}`,
-            `${base.maxGuests}인`,
-            base.safetyLevel ? `치안 ${safetyLabel(base.safetyLevel)}` : null,
-            base.satisfactionScore ? `만족도 ${formatNumber(base.satisfactionScore)}` : null
-        ].filter(Boolean).join(" · ");
+        const position = { lat: Number(base.latitude), lng: Number(base.longitude) };
+        new google.maps.StreetViewService().getPanorama({ location: position, radius: 60 }, (data, status) => {
+            if (status !== google.maps.StreetViewStatus.OK) {
+                target.classList.add("is-empty");
+                target.textContent = "이 주변은 스트리트뷰 사진이 없어요";
+                return;
+            }
+            new google.maps.StreetViewPanorama(target, {
+                pano: data.location.pano,
+                pov: { heading: 0, pitch: 0 },
+                zoom: 1,
+                addressControl: false,
+                fullscreenControl: false,
+                motionTrackingControl: false,
+                panControl: false
+            });
+        });
     }
 
     function infoContent(entry) {
         const base = entry.items[0];
-        const box = document.createElement("div");
-        const title = document.createElement("strong");
-        box.className = "accommodation-info";
-        title.textContent = displayName(entry);
-        box.append(title);
-        [
-            `${ACCOMMODATION_ROOM_LABELS[base.roomType]} · 침실 ${base.bedrooms}개 · 최대 ${base.maxGuests}인${base.isSuperhost ? " · 슈퍼호스트" : ""}`,
-            ...Object.keys(ACCOMMODATION_DAY_LABELS)
-                .filter((day) => dayPrice(entry, day) !== null)
-                .map((day) => `${ACCOMMODATION_DAY_LABELS[day]} 기준 총가격 ${dayPrice(entry, day)}`),
-            `청결 ${formatNumber(base.cleanlinessScore, 1)} · 만족도 ${formatNumber(base.satisfactionScore)}`,
-            `시내 ${formatNumber(base.distanceCityCenterKm, 1)}km · 지하철 ${formatNumber(base.distanceMetroKm, 1)}km`,
-            base.lsoaName ? `${base.lsoaName} · 치안 ${base.safetyLevel}등급 (${safetyLabel(base.safetyLevel)})` : null
-        ].filter(Boolean).forEach((line) => {
-            const row = document.createElement("div");
-            row.textContent = line;
-            box.append(row);
-        });
+        const box = el("div", "accommodation-info");
+        const pano = el("div", "acc-pano");
+        box.append(pano);
+
+        const head = el("div", "acc-head");
+        head.append(el("strong", "acc-title", displayName(entry)));
+        head.append(el("span", `acc-safety level-${base.safetyLevel}`, `치안 ${safetyLabel(base.safetyLevel)}`));
+        box.append(head);
+
+        const price = el("div", "acc-price");
+        price.append(el("strong", "acc-price-value", priceMain(entry)), el("span", "acc-price-label", `${dayLabel(entry)} · 총가격`));
+        box.append(price);
+
+        const stats = el("div", "acc-stats");
+        stats.append(
+            stat("인원", `최대 ${base.maxGuests}인`),
+            stat("침실", `${base.bedrooms}개`),
+            stat("만족도", formatNumber(base.satisfactionScore)),
+            stat("청결", formatNumber(base.cleanlinessScore, 1)),
+            stat("시내", `${formatNumber(base.distanceCityCenterKm, 1)}km`),
+            stat("지하철", `${formatNumber(base.distanceMetroKm, 1)}km`)
+        );
+        box.append(stats);
+
+        const meta = [ACCOMMODATION_ROOM_LABELS[base.roomType], base.isSuperhost ? "슈퍼호스트" : null, base.lsoaName].filter(Boolean).join(" · ");
+        box.append(el("div", "acc-meta", meta));
+
+        const link = el("a", "acc-route", "길찾기");
+        link.href = `https://www.google.com/maps/dir/?api=1&destination=${base.latitude},${base.longitude}`;
+        link.target = "_blank";
+        link.rel = "noopener";
+        box.append(link);
         return box;
     }
 
     function openInfo(entry) {
-        infoWindow.setContent(infoContent(entry));
+        const box = infoContent(entry);
+        infoWindow.setContent(box);
         infoWindow.open({ map, anchor: entry.marker });
+        google.maps.event.addListenerOnce(infoWindow, "domready", () => showStreetView(box.querySelector(".acc-pano"), entry));
     }
-
 
     function createEntry(item) {
         const entry = { items: [], rank: item.rank ?? null, marker: null, li: null, name: null, sub: null };
@@ -114,7 +154,6 @@ function initAccommodations(map) {
             position: { lat: Number(item.latitude), lng: Number(item.longitude) },
             map,
             zIndex: 8,
-
             label: entry.rank ? { text: String(entry.rank), color: "#ffffff", fontSize: "11px", fontWeight: "700" } : undefined,
             icon: {
                 path: google.maps.SymbolPath.CIRCLE,
@@ -127,11 +166,21 @@ function initAccommodations(map) {
         });
         const li = document.createElement("li");
         const button = document.createElement("button");
+        entry.badge = document.createElement("span");
+        entry.badge.className = "acc-badge";
+        const body = document.createElement("span");
+        body.className = "acc-body";
         entry.name = document.createElement("strong");
+        entry.dots = document.createElement("span");
+        entry.dots.className = "acc-dots";
         entry.sub = document.createElement("span");
+        entry.sub.className = "acc-meta";
+        body.append(entry.name, entry.dots, entry.sub);
+        entry.price = document.createElement("span");
+        entry.price.className = "acc-price";
         button.type = "button";
         button.className = "accommodation-item";
-        button.append(entry.name, entry.sub);
+        button.append(entry.badge, body, entry.price);
         button.addEventListener("click", () => {
             map.panTo(entry.marker.getPosition());
             if (map.getZoom() < 14) map.setZoom(14);
@@ -144,7 +193,8 @@ function initAccommodations(map) {
         entries.push(entry);
         return entry;
     }
- function renumber() {
+
+    function renumber() {
         entries.forEach((entry, index) => {
             entry.rank = topToggle.checked ? index + 1 : null;
             entry.marker.setLabel?.(entry.rank
@@ -153,12 +203,22 @@ function initAccommodations(map) {
             refresh(entry);
         });
     }
+
     function refresh(entry) {
-        entry.name.textContent = displayName(entry);
-        entry.sub.textContent = summaryText(entry);
+        const base = entry.items[0];
+        entry.name.textContent = base.name;
+        entry.badge.textContent = entry.rank ?? "";
+        entry.badge.hidden = !entry.rank;
+        const filled = base.safetyLevel ? 6 - base.safetyLevel : 0;
+        entry.dots.textContent = "●".repeat(filled) + "○".repeat(5 - filled) + (base.safetyLevel ? `  ${safetyLabel(base.safetyLevel)}` : "");
+        entry.sub.textContent = `${base.maxGuests}인 · 만족도 ${base.satisfactionScore ? formatNumber(base.satisfactionScore) : "-"}`;
+        const main = document.createElement("strong");
+        main.textContent = priceMain(entry);
+        const small = document.createElement("small");
+        small.textContent = dayLabel(entry);
+        entry.price.replaceChildren(main, small);
         entry.marker.setTitle?.(displayName(entry));
     }
-
 
     function attachItem(item) {
         const key = groupKey(item);
@@ -173,7 +233,6 @@ function initAccommodations(map) {
     }
 
     function addItems(items) {
-
         items.forEach(attachItem);
     }
 
@@ -183,7 +242,6 @@ function initAccommodations(map) {
         entries.length = 0;
         byKey.clear();
     }
-
 
     function trimTo(n) {
         entries.slice(n).forEach(({ marker, li }) => { marker.setMap(null); li.remove(); });
@@ -199,12 +257,10 @@ function initAccommodations(map) {
 
     function buildQuery() {
         const params = new URLSearchParams();
-
         new FormData(form).forEach((value, key) => {
             if (String(value).trim() !== "") params.set(key, String(value).trim());
         });
         params.set("size", ACCOMMODATION_PAGE_SIZE);
-      
         if (topToggle.checked) params.set("topN", String(Math.min(50, Number(topSelect.value) * 2)));
         return params;
     }
@@ -216,26 +272,34 @@ function initAccommodations(map) {
         submitButton.disabled = true;
         moreButton.disabled = true;
         try {
-            const response = await fetch(`/api/accommodations/search?${params}`);
-            const body = await response.json().catch(() => ({}));
-
-            if (id !== requestId) return;
-            if (response.status === 404) {
-                showMessage("숙소 검색은 DB에 연결된 상태에서만 이용할 수 있습니다.", true);
-                return;
+            let current = page;
+            let body;
+            while (true) {
+                params.set("page", current);
+                const response = await fetch(`/api/accommodations/search?${params}`);
+                body = await response.json().catch(() => ({}));
+                if (id !== requestId) return;
+                if (response.status === 404) {
+                    showMessage("숙소 검색은 DB에 연결된 상태에서만 이용할 수 있습니다.", true);
+                    return;
+                }
+                if (!response.ok) {
+                    showMessage(body.message || `검색에 실패했습니다. (HTTP ${response.status})`, true);
+                    return;
+                }
+                if (current === 0) clearEntries();
+                addItems(body.items);
+                if (topToggle.checked) break;
+                // 평일/주말 행이 한 숙소로 합쳐지므로, 한 페이지에 카드가 다 차도록 다음 페이지를 이어서 가져옵니다.
+                if (entries.length >= ACCOMMODATION_PAGE_SIZE || !body.hasNext) break;
+                current = body.page + 1;
             }
-            if (!response.ok) {
-                showMessage(body.message || `검색에 실패했습니다. (HTTP ${response.status})`, true);
-                return;
-            }
-            if (page === 0) clearEntries();
-            addItems(body.items);
             if (topToggle.checked) trimTo(Number(topSelect.value));
-  renumber();
+            renumber();
             nextPage = body.page + 1;
             count.textContent = topToggle.checked
                 ? `안전한 숙소 상위 ${formatNumber(entries.length)}개`
-                : `${formatNumber(entries.length)}개 숙소 표시 (검색 결과 ${formatNumber(body.total)}행)`;
+                : `${formatNumber(entries.length)}곳`;
             empty.hidden = body.total > 0;
             moreButton.hidden = !body.hasNext || topToggle.checked;
             message.hidden = true;
@@ -268,7 +332,8 @@ function initAccommodations(map) {
         if (!active) infoWindow.close();
         if (active && firstOpen) {
             firstOpen = false;
-            search(0);
+            count.textContent = "";
+            showMessage("조건을 고르고 검색 버튼을 눌러 주세요.");
         }
     });
     syncTopMode();
