@@ -46,3 +46,17 @@
 .accommodation-form .topn-row select { min-height: 30px; padding: 0 6px; border: 1px solid #cfd8df; border-radius: 6px; background: #ffffff; font: inherit; font-size: 12px; }
 .accommodation-form .topn-row select:disabled { opacity: 0.5; }
 .accommodation-form .topn-row select { width: auto; }
+
+.accommodation-panel[hidden] { display: none; }
+.accommodation-panel.map-panel { width: min(880px, calc(100vw - 32px)); }
+.accommodation-panel { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 0 18px; align-items: start; }
+.accommodation-panel > h1 { grid-column: 1; grid-row: 1; }
+.accommodation-panel > .description { grid-column: 1; grid-row: 2; }
+.accommodation-panel > form { grid-column: 1; grid-row: 3 / span 4; }
+.accommodation-panel > #accommodation-message { grid-column: 2; grid-row: 1; }
+.accommodation-panel > .accommodation-list-section { grid-column: 2; grid-row: 2 / span 3; margin-top: 0; padding-top: 0; border-top: 0; }
+.accommodation-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 760px) {
+  .accommodation-panel { display: block; }
+  .accommodation-list { grid-template-columns: 1fr; }
+}
