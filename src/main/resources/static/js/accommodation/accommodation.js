@@ -20,7 +20,6 @@ function initAccommodations(map) {
     const sortSelect = form.querySelector('[name="sort"]');
     const infoWindow = new google.maps.InfoWindow();
     const entries = [];
-
     const byKey = new Map();
     let query = null;
     let nextPage = 0;
@@ -48,7 +47,6 @@ function initAccommodations(map) {
         sortSelect.disabled = top;
         if (top) moreButton.hidden = true;
     }
-
     function groupKey(item) {
         return [item.latitude, item.longitude, item.roomType, item.maxGuests, item.bedrooms].join("|");
     }
@@ -57,6 +55,7 @@ function initAccommodations(map) {
         const item = entry.items.find((row) => row.dayType === day);
         return item ? formatNumber(item.priceTotal, 2) : null;
     }
+
 
     function priceLine(entry) {
         return Object.keys(ACCOMMODATION_DAY_LABELS)
@@ -79,7 +78,6 @@ function initAccommodations(map) {
             base.satisfactionScore ? `만족도 ${formatNumber(base.satisfactionScore)}` : null
         ].filter(Boolean).join(" · ");
     }
-
 
     function infoContent(entry) {
         const base = entry.items[0];
@@ -166,7 +164,6 @@ function initAccommodations(map) {
         entry.items.push(item);
     }
 
-
     function addItems(items) {
         items.forEach(attachItem);
         entries.forEach(refresh);
@@ -177,6 +174,12 @@ function initAccommodations(map) {
         entries.forEach(({ marker, li }) => { marker.setMap(null); li.remove(); });
         entries.length = 0;
         byKey.clear();
+    }
+
+
+    function trimTo(n) {
+        entries.slice(n).forEach(({ marker, li }) => { marker.setMap(null); li.remove(); });
+        entries.splice(n);
     }
 
     function fitToResults() {
@@ -193,6 +196,8 @@ function initAccommodations(map) {
             if (String(value).trim() !== "") params.set(key, String(value).trim());
         });
         params.set("size", ACCOMMODATION_PAGE_SIZE);
+      
+        if (topToggle.checked) params.set("topN", String(Math.min(50, Number(topSelect.value) * 2)));
         return params;
     }
 
@@ -216,8 +221,8 @@ function initAccommodations(map) {
                 return;
             }
             if (page === 0) clearEntries();
-
             addItems(body.items);
+            if (topToggle.checked) trimTo(Number(topSelect.value));
             nextPage = body.page + 1;
             count.textContent = topToggle.checked
                 ? `안전한 숙소 상위 ${formatNumber(entries.length)}개`
@@ -247,7 +252,6 @@ function initAccommodations(map) {
         search(0);
     });
     moreButton.addEventListener("click", () => search(nextPage));
-
 
     window.addEventListener("app:menu", (event) => {
         const active = event.detail.menu === "accommodation";
