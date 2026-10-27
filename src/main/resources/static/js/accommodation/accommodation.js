@@ -1,7 +1,8 @@
 const ACCOMMODATION_SAFETY_LABELS = ["매우 안전", "안전", "보통", "주의", "위험"];
 const ACCOMMODATION_ROOM_LABELS = { ENTIRE_HOME: "전체 집", PRIVATE_ROOM: "개인실", SHARED_ROOM: "공용실" };
 const ACCOMMODATION_DAY_LABELS = { weekday: "평일", weekend: "주말" };
-const ACCOMMODATION_PAGE_SIZE = 20;
+const ACCOMMODATION_ALL_LIMIT = 500;
+const ACCOMMODATION_ALL_PAGE_SIZE = 100;
 
 function initAccommodations(map) {
     const form = document.getElementById("accommodation-form");
@@ -9,27 +10,22 @@ function initAccommodations(map) {
     const resetButton = document.getElementById("accommodation-reset");
     const message = document.getElementById("accommodation-message");
     const list = document.getElementById("accommodation-list");
-    const count = document.getElementById("accommodation-count");
     const empty = document.getElementById("accommodation-empty");
-    const moreButton = document.getElementById("accommodation-more");
-    const topToggle = form.querySelector('[name="safestTop"]');
-    const topSelect = form.querySelector('[name="topN"]');
+    const safestToggle = form.querySelector('[name="safestTop"]');
     const sortSelect = form.querySelector('[name="sort"]');
+    const sizeSelect = form.querySelector('[name="size"]');
+    const keywordInput = form.querySelector('[name="keyword"]');
     const infoWindow = new google.maps.InfoWindow({ maxWidth: 320 });
     const entries = [];
     const byKey = new Map();
-    let query = null;
-    let nextPage = 0;
     let requestId = 0;
-    let firstOpen = true;
-    const PIN_MIN_ZOOM = 11;
-    const pinEntries = [];
-    const pinsByKey = new Map();
-    let pinRequestId = 0;
-    let pinTimer = null;
-    let menuActive = false;
-    let showAllPins = false;
-    let searchActive = false;
+    let searched = false;
+
+    function setEmpty(text) {
+        empty.textContent = text ?? "";
+        empty.hidden = !text;
+    }
+
     function showMessage(text, isError = false) {
         message.textContent = text;
         message.classList.toggle("error", isError);
@@ -44,11 +40,8 @@ function initAccommodations(map) {
         return level ? ACCOMMODATION_SAFETY_LABELS[level - 1] : null;
     }
 
-    function syncTopMode() {
-        const top = topToggle.checked;
-        topSelect.disabled = !top;
-        sortSelect.disabled = top;
-        if (top) moreButton.hidden = true;
+    function syncSafest() {
+        sortSelect.disabled = safestToggle.checked;
     }
 
     function groupKey(item) {
@@ -203,7 +196,7 @@ function initAccommodations(map) {
 
     function renumber() {
         entries.forEach((entry, index) => {
-            entry.rank = topToggle.checked ? index + 1 : null;
+            entry.rank = safestToggle.checked ? index + 1 : null;
             entry.marker.setLabel?.(entry.rank
                 ? { text: String(entry.rank), color: "#ffffff", fontSize: "11px", fontWeight: "700" }
                 : null);
@@ -229,12 +222,6 @@ function initAccommodations(map) {
 
     function attachItem(item) {
         const key = groupKey(item);
-        const pin = pinsByKey.get(key);
-        if (pin) {
-            pin.marker?.setMap(null);
-            pinsByKey.delete(key);
-            pinEntries.splice(pinEntries.indexOf(pin), 1);
-        }
         const cards = byKey.get(key) || [];
         let entry = cards.find((card) => !card.items.some((row) => row.dayType === item.dayType));
         if (!entry) {
@@ -273,22 +260,24 @@ function initAccommodations(map) {
         new FormData(form).forEach((value, key) => {
             if (String(value).trim() !== "") params.set(key, String(value).trim());
         });
-        params.set("size", ACCOMMODATION_PAGE_SIZE);
-        if (topToggle.checked) params.set("topN", String(Math.min(50, Number(topSelect.value) * 2)));
         return params;
     }
 
-    async function search(page) {
+    async function search() {
         const id = ++requestId;
-        const params = page === 0 ? (query = buildQuery()) : query;
-        params.set("page", page);
+        const params = buildQuery();
+        const choice = sizeSelect.value;
+        const target = choice === "all" ? ACCOMMODATION_ALL_LIMIT : Number(choice);
+        params.set("size", choice === "all" ? ACCOMMODATION_ALL_PAGE_SIZE : target);
+        searched = true;
         submitButton.disabled = true;
-        moreButton.disabled = true;
+        clearEntries();
+        setEmpty(null);
         try {
-            let current = page;
+            let page = 0;
             let body;
             while (true) {
-                params.set("page", current);
+                params.set("page", page);
                 const response = await fetch(`/api/accommodations/search?${params}`);
                 body = await response.json().catch(() => ({}));
                 if (id !== requestId) return;
@@ -300,171 +289,47 @@ function initAccommodations(map) {
                     showMessage(body.message || `검색에 실패했습니다. (HTTP ${response.status})`, true);
                     return;
                 }
-                if (current === 0) clearEntries();
                 addItems(body.items);
-                if (topToggle.checked) break;
-                // 평일/주말 행이 한 숙소로 합쳐지므로, 한 페이지에 카드가 다 차도록 다음 페이지를 이어서 가져옵니다.
-                if (entries.length >= ACCOMMODATION_PAGE_SIZE || !body.hasNext) break;
-                current = body.page + 1;
+                // 평일/주말 행이 한 숙소로 합쳐지므로, 목록을 채울 때까지 다음 페이지를 이어서 가져옵니다.
+                if (entries.length >= target || !body.hasNext) break;
+                page = body.page + 1;
             }
-            if (topToggle.checked) trimTo(Number(topSelect.value));
+            trimTo(target);
             renumber();
-            nextPage = body.page + 1;
-            count.textContent = topToggle.checked
-                ? `안전한 숙소 상위 ${formatNumber(entries.length)}개`
-                : "";
-            empty.hidden = body.total > 0;
-            moreButton.hidden = !body.hasNext || topToggle.checked;
+            setEmpty(entries.length > 0 ? null : "조건에 맞는 숙소가 없습니다.");
             message.hidden = true;
-            if (page === 0) fitToResults();
-            if (page === 0) {
-                searchActive = true;
-                syncPinRow();
-                schedulePins();
-            }
+            if (choice === "all" && body.hasNext) showMessage(`최대 ${ACCOMMODATION_ALL_LIMIT}개까지만 보여드려요.`);
+            fitToResults();
         } catch (error) {
             showMessage("숙소 검색은 DB에 연결된 상태에서만 이용할 수 있습니다.", true);
         } finally {
-            if (id === requestId) {
-                submitButton.disabled = false;
-                moreButton.disabled = false;
-            }
+            if (id === requestId) submitButton.disabled = false;
         }
-    }
-
-    function createPinMarker(entry) {
-        const item = entry.items[0];
-        entry.marker = new google.maps.Marker({
-            position: { lat: Number(item.latitude), lng: Number(item.longitude) },
-            map: null,
-            zIndex: 4,
-            icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 5,
-                fillColor: "#1971c2",
-                fillOpacity: 0.85,
-                strokeColor: "#ffffff",
-                strokeWeight: 1.5
-            }
-        });
-        entry.marker.addListener("click", () => openInfo(entry));
-    }
-
-    function createPinMarker(entry) {
-        const item = entry.items[0];
-        entry.marker = new google.maps.Marker({
-            position: { lat: Number(item.latitude), lng: Number(item.longitude) },
-            map: null,
-            zIndex: 4,
-            icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 5,
-                fillColor: "#1971c2",
-                fillOpacity: 0.85,
-                strokeColor: "#ffffff",
-                strokeWeight: 1.5
-            }
-        });
-        entry.marker.addListener("click", () => openInfo(entry));
-    }
-
-    function hidePins() {
-        pinEntries.forEach(({ marker }) => marker?.setMap(null));
-        pinEntries.length = 0;
-        pinsByKey.clear();
-    }
-
-    function showPins(items) {
-        hidePins();
-        items.forEach((item) => {
-            const key = groupKey(item);
-            if (byKey.has(key)) return;
-            const existing = pinsByKey.get(key);
-            if (existing) {
-                existing.items.push(item);
-                return;
-            }
-            const entry = { items: [item], rank: null, marker: null };
-            pinsByKey.set(key, entry);
-            pinEntries.push(entry);
-        });
-        pinEntries.forEach((entry) => createPinMarker(entry));
-        const markers = pinEntries.map(({ marker }) => marker);
-        markers.forEach((marker) => marker.setMap(map));
-    }
-
-    async function refreshPins() {
-        const id = ++pinRequestId;
-        const bounds = map.getBounds();
-        if (!menuActive || !searchActive || map.getZoom() < PIN_MIN_ZOOM || !bounds) {
-            hidePins();
-            return;
-        }
-        const params = buildQuery();
-        ["page", "size", "topN", "safestTop"].forEach((key) => params.delete(key));
-        const sw = bounds.getSouthWest();
-        const ne = bounds.getNorthEast();
-        params.set("minLat", sw.lat());
-        params.set("maxLat", ne.lat());
-        params.set("minLng", sw.lng());
-        params.set("maxLng", ne.lng());
-        if (showAllPins) params.set("all", "true");
-        try {
-            const response = await fetch(`/api/accommodations/pins?${params}`);
-            if (!response.ok || id !== pinRequestId) return;
-            showPins(await response.json());
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    function schedulePins() {
-        clearTimeout(pinTimer);
-        pinTimer = setTimeout(refreshPins, 300);
-    }
-
-    function fitRegion() {
-        const bounds = new google.maps.LatLngBounds();
-        entries.forEach(({ marker }) => bounds.extend(marker.getPosition()));
-        if (bounds.isEmpty()) return;
-        map.fitBounds(bounds, 40);
-        google.maps.event.addListenerOnce(map, "idle", () => {
-            if (map.getZoom() < PIN_MIN_ZOOM) map.setZoom(PIN_MIN_ZOOM);
-        });
-    }
-
-    async function searchRegion() {
-        await search(0);
-        fitRegion();
     }
 
     form.addEventListener("submit", (event) => {
         event.preventDefault();
-        search(0);
+        search();
     });
-    topToggle.addEventListener("change", syncTopMode);
+    safestToggle.addEventListener("change", () => {
+        syncSafest();
+        if (searched) search();
+    });
+    sizeSelect.addEventListener("change", () => {
+        if (searched) search();
+    });
     resetButton.addEventListener("click", () => {
         form.reset();
-        syncTopMode();
-        search(0);
+        syncSafest();
+        search();
     });
-    moreButton.addEventListener("click", () => search(nextPage));
-    map.addListener("idle", schedulePins);
 
     window.addEventListener("app:menu", (event) => {
         const active = event.detail.menu === "accommodation";
-        menuActive = active;
-        syncPinRow();
         entries.forEach(({ marker }) => marker.setMap(active ? map : null));
-        schedulePins();
         if (!active) infoWindow.close();
-        if (active && firstOpen) {
-            firstOpen = false;
-            count.textContent = "";
-            showMessage("조건을 고르고 검색 버튼을 눌러 주세요.");
-        }
     });
-    const keywordInput = form.querySelector('[name="keyword"]');
+
     const keywordLabel = keywordInput.closest("label");
     const row = document.createElement("div");
     row.className = "two";
@@ -492,43 +357,18 @@ function initAccommodations(map) {
     }
     loadBoroughs();
 
-    window.addEventListener("accommodation:borough-click", (event) => {
-        const borough = event.detail.borough;
+    window.addEventListener("accommodation:borough-click", async (event) => {
+        const { borough, bounds } = event.detail;
         if (![...boroughSelect.options].some((option) => option.value === borough)) {
-            showMessage("이 지역에는 등록된 숙소가 없어요.");
-            return;
+            boroughSelect.append(new Option(borough, borough));
         }
         boroughSelect.value = borough;
         keywordInput.value = borough;
-        searchRegion();
+        await search();
+        if (bounds) map.fitBounds(bounds, 40);
     });
 
-    const pinRow = document.createElement("div");
-    pinRow.id = "accommodation-pins-row";
-    pinRow.style.cssText = "display:none;align-items:center;gap:8px;margin:10px 0 0;padding:6px 8px 6px 12px;border-radius:999px;background:#ffffff;box-shadow:0 1px 4px rgba(0,0,0,0.25);font-size:12px;color:#40505c;";
-    const pinNotice = document.createElement("span");
-    const pinToggle = document.createElement("button");
-    pinToggle.type = "button";
-    pinToggle.className = "button secondary";
-    pinToggle.style.cssText = "min-height:28px;padding:0 10px;font-size:12px;white-space:nowrap;flex:0 0 auto;";
-    function syncPinNotice() {
-        pinNotice.textContent = showAllPins
-            ? "지도 핀: 화면 안 전체 (최대 1000개)"
-            : "지도 핀: 정렬 상위 50개";
-        pinToggle.textContent = showAllPins ? "상위 50개만 보기" : "전체 보기";
-    }
-    pinToggle.addEventListener("click", () => {
-        showAllPins = !showAllPins;
-        syncPinNotice();
-        refreshPins();
-    });
-    pinRow.append(pinNotice, pinToggle);
-    map.controls[google.maps.ControlPosition.TOP_CENTER].push(pinRow);
-    function syncPinRow() {
-        pinRow.style.display = searchActive && menuActive ? "flex" : "none";
-    }
-    syncPinNotice();
-
-    syncTopMode();
+    setEmpty("검색 버튼을 누르면 결과가 나와요.");
+    syncSafest();
     submitButton.disabled = false;
 }

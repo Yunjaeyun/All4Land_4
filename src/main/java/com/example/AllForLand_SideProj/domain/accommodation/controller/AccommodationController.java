@@ -1,6 +1,5 @@
 package com.example.AllForLand_SideProj.domain.accommodation.controller;
 
-import com.example.AllForLand_SideProj.domain.accommodation.dto.AccommodationResponse;
 import com.example.AllForLand_SideProj.domain.accommodation.dto.AccommodationSearchRequest;
 import com.example.AllForLand_SideProj.domain.accommodation.dto.AccommodationSearchResponse;
 import com.example.AllForLand_SideProj.domain.accommodation.service.AccommodationService;
@@ -8,11 +7,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -28,18 +27,10 @@ public class AccommodationController {
         return accommodationService.boroughs();
     }
 
-    @GetMapping("/pins")
-    public List<AccommodationResponse> pins(
-            @Valid AccommodationSearchRequest request,
-            @RequestParam(name = "minLat") double minLat,
-            @RequestParam(name = "maxLat") double maxLat,
-            @RequestParam(name = "minLng") double minLng,
-            @RequestParam(name = "maxLng") double maxLng,
-            @RequestParam(name = "all", defaultValue = "false") boolean all) {
-        return accommodationService.pins(request,
-                new AccommodationService.ViewBounds(minLat, maxLat, minLng, maxLng), all);
+    @GetMapping("/borough-counts")
+    public Map<String, Long> boroughCounts() {
+        return accommodationService.boroughCounts();
     }
-
     @GetMapping("/search")
     public AccommodationSearchResponse search(@Valid AccommodationSearchRequest request) {
         return accommodationService.search(request);

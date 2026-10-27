@@ -22,7 +22,14 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
     @Query("select distinct z.lsoaName from SafetyZone z where exists (select a.id from Accommodation a where a.safetyZone = z)")
     List<String> findAllLsoaNames();
 
-    @Override
-    @EntityGraph(attributePaths = "safetyZone")
-    List<Accommodation> findAll(Specification<Accommodation> spec);
+    @Query(value = """
+            SELECT regexp_replace(z.lsoa_name, '\\s+\\S+$', '') AS borough, COUNT(*) AS cnt
+            FROM (
+                SELECT DISTINCT safety_zone_id, latitude, longitude, room_type, max_guests, bedrooms
+                FROM accommodations
+            ) AS d
+            JOIN safety_zones z ON z.safety_zone_id = d.safety_zone_id
+            GROUP BY 1
+            """, nativeQuery = true)
+    List<Object[]> countUniqueByBorough();
 }

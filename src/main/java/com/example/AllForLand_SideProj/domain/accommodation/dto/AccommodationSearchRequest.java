@@ -46,11 +46,9 @@ public record AccommodationSearchRequest(
         @Max(value = 100, message = "페이지 크기는 100 이하로 입력해 주세요.")
         Integer size,
         
-        Boolean safestTop,
+        Boolean safestTop
 
-        @Min(value = 1, message = "상위 개수는 1~50 사이로 입력해 주세요.")
-        @Max(value = 50, message = "상위 개수는 1~50 사이로 입력해 주세요.")
-        Integer topN
+    
         
         
 ) {
