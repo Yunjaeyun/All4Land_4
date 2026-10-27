@@ -299,7 +299,7 @@ function initAccommodations(map) {
             nextPage = body.page + 1;
             count.textContent = topToggle.checked
                 ? `안전한 숙소 상위 ${formatNumber(entries.length)}개`
-                : `${formatNumber(entries.length)}곳`;
+                : "";
             empty.hidden = body.total > 0;
             moreButton.hidden = !body.hasNext || topToggle.checked;
             message.hidden = true;
@@ -336,6 +336,42 @@ function initAccommodations(map) {
             showMessage("조건을 고르고 검색 버튼을 눌러 주세요.");
         }
     });
+    const keywordInput = form.querySelector('[name="keyword"]');
+    const keywordLabel = keywordInput.closest("label");
+    const row = document.createElement("div");
+    row.className = "two";
+    const boroughLabel = document.createElement("label");
+    const boroughSelect = document.createElement("select");
+    boroughLabel.textContent = "자치구";
+    boroughSelect.id = "accommodation-borough";
+    boroughSelect.append(new Option("전체", ""));
+    boroughSelect.addEventListener("change", () => {
+        keywordInput.value = boroughSelect.value;
+    });
+    boroughLabel.append(boroughSelect);
+    keywordLabel.replaceWith(row);
+    row.append(keywordLabel, boroughLabel);
+
+    async function loadBoroughs() {
+        try {
+            const response = await fetch("/api/accommodations/boroughs");
+            if (!response.ok) return;
+            const names = await response.json();
+            names.forEach((name) => boroughSelect.append(new Option(name, name)));
+        } catch (error) {
+            console.error(error);
+        }
+    }
+    loadBoroughs();
+
+    window.addEventListener("accommodation:borough-click", (event) => {
+        const borough = event.detail.borough;
+        if (![...boroughSelect.options].some((option) => option.value === borough)) return;
+        boroughSelect.value = borough;
+        keywordInput.value = borough;
+        search(0);
+    });
+
     syncTopMode();
     submitButton.disabled = false;
 }

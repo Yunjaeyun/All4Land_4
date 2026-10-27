@@ -70,6 +70,13 @@ public class AccommodationService {
         return new AccommodationSearchResponse(result.getTotalElements(), 0, topN, false, items);
     }
 
+    public List<String> boroughs() {
+        return accommodationRepository.findAllLsoaNames().stream()
+                .map(name -> name.replaceAll("\\s+\\S+$", ""))
+                .distinct()
+                .sorted()
+                .toList();
+    }
     static Specification<Accommodation> toSpecification(AccommodationSearchRequest request) {
     	
     	boolean safestTop = Boolean.TRUE.equals(request.safestTop());

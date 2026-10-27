@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -242,7 +243,7 @@
                     strokeColor: "#ffffff",
                     strokeOpacity: 0.75,
                     strokeWeight: 0.45,
-                    clickable: false
+                    clickable: document.body.dataset.activeMenu === "accommodation"
                 };
             });
             map.data.setMap(map);
@@ -307,6 +308,12 @@
         map.addListener("zoom_changed", suspendRendering);
         map.addListener("dragstart", suspendRendering);
         map.addListener("idle", resumeRendering);
+        map.data.addListener("click", (event) => {
+            if (document.body.dataset.activeMenu !== "accommodation") return;
+            window.dispatchEvent(new CustomEvent("accommodation:borough-click", {
+                detail: { borough: event.feature.getProperty("borough") }
+            }));
+        });
     }
 
     window.gm_authFailure = () => {

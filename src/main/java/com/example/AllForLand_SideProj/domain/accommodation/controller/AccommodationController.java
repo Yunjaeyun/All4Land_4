@@ -5,6 +5,9 @@ import com.example.AllForLand_SideProj.domain.accommodation.dto.AccommodationSea
 import com.example.AllForLand_SideProj.domain.accommodation.service.AccommodationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AccommodationController {
 
     private final AccommodationService accommodationService;
+    
+    @GetMapping("/boroughs")
+    public List<String> boroughs() {
+        return accommodationService.boroughs();
+    }
 
     @GetMapping("/search")
     public AccommodationSearchResponse search(@Valid AccommodationSearchRequest request) {
