@@ -144,7 +144,15 @@ function initAccommodations(map) {
         entries.push(entry);
         return entry;
     }
-
+ function renumber() {
+        entries.forEach((entry, index) => {
+            entry.rank = topToggle.checked ? index + 1 : null;
+            entry.marker.setLabel?.(entry.rank
+                ? { text: String(entry.rank), color: "#ffffff", fontSize: "11px", fontWeight: "700" }
+                : null);
+            refresh(entry);
+        });
+    }
     function refresh(entry) {
         entry.name.textContent = displayName(entry);
         entry.sub.textContent = summaryText(entry);
@@ -165,8 +173,8 @@ function initAccommodations(map) {
     }
 
     function addItems(items) {
+
         items.forEach(attachItem);
-        entries.forEach(refresh);
     }
 
     function clearEntries() {
@@ -223,6 +231,7 @@ function initAccommodations(map) {
             if (page === 0) clearEntries();
             addItems(body.items);
             if (topToggle.checked) trimTo(Number(topSelect.value));
+  renumber();
             nextPage = body.page + 1;
             count.textContent = topToggle.checked
                 ? `안전한 숙소 상위 ${formatNumber(entries.length)}개`
