@@ -15,7 +15,7 @@ function initAccommodations(map) {
     const topToggle = form.querySelector('[name="safestTop"]');
     const topSelect = form.querySelector('[name="topN"]');
     const sortSelect = form.querySelector('[name="sort"]');
-    const infoWindow = new google.maps.InfoWindow();
+    const infoWindow = new google.maps.InfoWindow({ maxWidth: 320 });
     const entries = [];
     const byKey = new Map();
     let query = null;
@@ -70,32 +70,82 @@ function initAccommodations(map) {
         return hasWeekday ? "평일 기준" : "주말 기준";
     }
 
+    function el(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined && text !== null) node.textContent = text;
+        return node;
+    }
+
+    function stat(label, value) {
+        const box = el("div", "acc-stat");
+        box.append(el("span", "acc-stat-label", label), el("strong", "acc-stat-value", value));
+        return box;
+    }
+
+    function showStreetView(target, entry) {
+        const base = entry.items[0];
+        const position = { lat: Number(base.latitude), lng: Number(base.longitude) };
+        new google.maps.StreetViewService().getPanorama({ location: position, radius: 60 }, (data, status) => {
+            if (status !== google.maps.StreetViewStatus.OK) {
+                target.classList.add("is-empty");
+                target.textContent = "이 주변은 스트리트뷰 사진이 없어요";
+                return;
+            }
+            new google.maps.StreetViewPanorama(target, {
+                pano: data.location.pano,
+                pov: { heading: 0, pitch: 0 },
+                zoom: 1,
+                addressControl: false,
+                fullscreenControl: false,
+                motionTrackingControl: false,
+                panControl: false
+            });
+        });
+    }
+
     function infoContent(entry) {
         const base = entry.items[0];
-        const box = document.createElement("div");
-        const title = document.createElement("strong");
-        box.className = "accommodation-info";
-        title.textContent = displayName(entry);
-        box.append(title);
-        [
-            `${ACCOMMODATION_ROOM_LABELS[base.roomType]} · 침실 ${base.bedrooms}개 · 최대 ${base.maxGuests}인${base.isSuperhost ? " · 슈퍼호스트" : ""}`,
-            ...Object.keys(ACCOMMODATION_DAY_LABELS)
-                .filter((day) => dayPrice(entry, day) !== null)
-                .map((day) => `${ACCOMMODATION_DAY_LABELS[day]} 기준 총가격 ${dayPrice(entry, day)}`),
-            `청결 ${formatNumber(base.cleanlinessScore, 1)} · 만족도 ${formatNumber(base.satisfactionScore)}`,
-            `시내 ${formatNumber(base.distanceCityCenterKm, 1)}km · 지하철 ${formatNumber(base.distanceMetroKm, 1)}km`,
-            base.lsoaName ? `${base.lsoaName} · 치안 ${base.safetyLevel}등급 (${safetyLabel(base.safetyLevel)})` : null
-        ].filter(Boolean).forEach((line) => {
-            const row = document.createElement("div");
-            row.textContent = line;
-            box.append(row);
-        });
+        const box = el("div", "accommodation-info");
+        const pano = el("div", "acc-pano");
+        box.append(pano);
+
+        const head = el("div", "acc-head");
+        head.append(el("strong", "acc-title", displayName(entry)));
+        head.append(el("span", `acc-safety level-${base.safetyLevel}`, `치안 ${safetyLabel(base.safetyLevel)}`));
+        box.append(head);
+
+        const price = el("div", "acc-price");
+        price.append(el("strong", "acc-price-value", priceMain(entry)), el("span", "acc-price-label", `${dayLabel(entry)} · 총가격`));
+        box.append(price);
+
+        const stats = el("div", "acc-stats");
+        stats.append(
+            stat("인원", `최대 ${base.maxGuests}인`),
+            stat("침실", `${base.bedrooms}개`),
+            stat("만족도", formatNumber(base.satisfactionScore)),
+            stat("청결", formatNumber(base.cleanlinessScore, 1)),
+            stat("시내", `${formatNumber(base.distanceCityCenterKm, 1)}km`),
+            stat("지하철", `${formatNumber(base.distanceMetroKm, 1)}km`)
+        );
+        box.append(stats);
+
+        const meta = [ACCOMMODATION_ROOM_LABELS[base.roomType], base.isSuperhost ? "슈퍼호스트" : null, base.lsoaName].filter(Boolean).join(" · ");
+        box.append(el("div", "acc-meta", meta));
+
+        const link = el("a", "acc-route", "길찾기");
+        link.href = `https://www.google.com/maps/dir/?api=1&destination=${base.latitude},${base.longitude}`;
+        link.target = "_blank";
+        link.rel = "noopener";
+        box.append(link);
         return box;
     }
 
     function openInfo(entry) {
-        infoWindow.setContent(infoContent(entry));
+        const box = infoContent(entry);
+        infoWindow.setContent(box);
         infoWindow.open({ map, anchor: entry.marker });
+        google.maps.event.addListenerOnce(infoWindow, "domready", () => showStreetView(box.querySelector(".acc-pano"), entry));
     }
 
     function createEntry(item) {
@@ -222,25 +272,34 @@ function initAccommodations(map) {
         submitButton.disabled = true;
         moreButton.disabled = true;
         try {
-            const response = await fetch(`/api/accommodations/search?${params}`);
-            const body = await response.json().catch(() => ({}));
-            if (id !== requestId) return;
-            if (response.status === 404) {
-                showMessage("숙소 검색은 DB에 연결된 상태에서만 이용할 수 있습니다.", true);
-                return;
+            let current = page;
+            let body;
+            while (true) {
+                params.set("page", current);
+                const response = await fetch(`/api/accommodations/search?${params}`);
+                body = await response.json().catch(() => ({}));
+                if (id !== requestId) return;
+                if (response.status === 404) {
+                    showMessage("숙소 검색은 DB에 연결된 상태에서만 이용할 수 있습니다.", true);
+                    return;
+                }
+                if (!response.ok) {
+                    showMessage(body.message || `검색에 실패했습니다. (HTTP ${response.status})`, true);
+                    return;
+                }
+                if (current === 0) clearEntries();
+                addItems(body.items);
+                if (topToggle.checked) break;
+                // 평일/주말 행이 한 숙소로 합쳐지므로, 한 페이지에 카드가 다 차도록 다음 페이지를 이어서 가져옵니다.
+                if (entries.length >= ACCOMMODATION_PAGE_SIZE || !body.hasNext) break;
+                current = body.page + 1;
             }
-            if (!response.ok) {
-                showMessage(body.message || `검색에 실패했습니다. (HTTP ${response.status})`, true);
-                return;
-            }
-            if (page === 0) clearEntries();
-            addItems(body.items);
             if (topToggle.checked) trimTo(Number(topSelect.value));
             renumber();
             nextPage = body.page + 1;
             count.textContent = topToggle.checked
                 ? `안전한 숙소 상위 ${formatNumber(entries.length)}개`
-                : `${formatNumber(entries.length)}개 숙소 표시 (검색 결과 ${formatNumber(body.total)}행)`;
+                : `검색 결과 ${formatNumber(entries.length)}곳`;
             empty.hidden = body.total > 0;
             moreButton.hidden = !body.hasNext || topToggle.checked;
             message.hidden = true;
