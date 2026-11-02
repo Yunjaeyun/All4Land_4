@@ -22,6 +22,8 @@
     function selectMenu(menu) {
         document.body.dataset.activeMenu = menu;
         Object.entries(panels).forEach(([key, panel]) => { panel.hidden = key !== menu; });
+        const results = document.getElementById("accommodation-results");
+        if (results) results.hidden = menu !== "accommodation";
         document.querySelectorAll(".app-nav [data-menu]").forEach((button) => {
             button.setAttribute("aria-pressed", String(button.dataset.menu === menu));
         });
@@ -90,9 +92,9 @@
         previewUrl = URL.createObjectURL(file);
         preview.src = previewUrl;
         preview.hidden = false;
-        feedback.textContent = "사진 미리보기입니다. 아직 서버에 저장되지 않습니다.";
+        feedback.textContent = "선택한 사진을 미리 보고 있어요.";
     });
     customPanel.querySelectorAll("form").forEach((form) => form.addEventListener("submit", (event) => event.preventDefault()));
     const requestedMenu = new URLSearchParams(location.search).get("menu");
-    selectMenu(Object.hasOwn(panels, requestedMenu) ? requestedMenu : "custom-layer");
+    selectMenu(Object.hasOwn(panels, requestedMenu) ? requestedMenu : "accommodation");
 })();

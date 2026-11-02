@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>런던 지역별 GIS 주제도</title>
+    <title>SafeStay London · 안전한 동네</title>
     <link rel="stylesheet" th:href="@{/css/navigation.css}">
     <link rel="stylesheet" th:href="@{/css/custom-layer/panel.css}">
     <link rel="stylesheet" th:href="@{/css/restaurant/panel.css}">
@@ -11,7 +11,7 @@
     <style>
         :root { color-scheme: light; font-family: Arial, "Noto Sans KR", sans-serif; }
         * { box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; margin: 0; }
+        html, body { width: 100%; height: 100%; margin: 0; background: var(--paper, #f2eee6); }
         #map { width: 100%; height: calc(100% - var(--app-header-height)); }
 
         .map-panel {
@@ -19,67 +19,63 @@
             z-index: 2;
             top: calc(var(--app-header-height) + 16px);
             left: 16px;
-            width: min(350px, calc(100vw - 32px));
+            width: min(340px, calc(100vw - 32px));
             max-height: calc(100vh - var(--app-header-height) - 32px);
             overflow-y: auto;
-            padding: 17px;
-            border: 1px solid #d7dee5;
-            border-radius: 12px;
+            padding: 22px;
+            border: 1px solid var(--line);
+            border-radius: 24px;
             background: rgba(255, 255, 255, 0.97);
-            box-shadow: 0 4px 18px rgba(29, 45, 61, 0.18);
+            box-shadow: 0 8px 24px rgba(43, 42, 39, 0.12);
+            scrollbar-width: none;
         }
+        .map-panel::-webkit-scrollbar { display: none; }
 
-        h1 { margin: 0 0 5px; color: #182733; font-size: 18px; }
-        .description { margin: 0 0 13px; color: #5d6b76; font-size: 12px; line-height: 1.5; }
-        .layer-list { display: grid; gap: 7px; margin: 0; padding: 0; border: 0; }
-        .layer-list legend { margin-bottom: 6px; color: #40505c; font-size: 12px; font-weight: 700; }
-
-        .layer-toggle {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            min-height: 40px;
-            padding: 9px 11px;
-            border: 1px solid #cfd8df;
-            border-radius: 8px;
-            color: #1d2d39;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 700;
-        }
-        .layer-toggle:has(input:checked) { border-color: #596d7c; background: #f5f8fa; }
-        .layer-toggle input { width: 18px; height: 18px; margin: 0; accent-color: #345f82; }
-        .layer-toggle input:disabled { cursor: wait; }
-
-        .legend { margin-top: 13px; border-top: 1px solid #e3e8ec; padding-top: 12px; }
-        .legend-heading { margin: 0 0 9px; color: #263743; font-size: 12px; font-weight: 700; }
-        .legend-items { display: grid; gap: 6px; }
-        .legend-item { display: grid; grid-template-columns: 16px 1fr; align-items: center; gap: 7px; color: #52616c; font-size: 11px; }
-        .legend-swatch { width: 16px; height: 12px; border: 1px solid rgba(25, 35, 42, 0.14); border-radius: 2px; }
-        .legend-note { margin: 9px 0 0; color: #78858e; font-size: 10px; line-height: 1.45; }
-        .status, .attribution { margin-top: 10px; color: #78858e; font-size: 10px; line-height: 1.45; }
+        h1 { margin: 0 0 4px; color: var(--ink); font-size: 22px; letter-spacing: -0.4px; }
+        .description { margin: 0 0 16px; color: var(--ink-2); font-size: 12px; line-height: 1.5; }
+        .status, .attribution { margin-top: 12px; color: var(--ink-3); font-size: 10px; line-height: 1.45; }
         [hidden] { display: none !important; }
+
+        .step-title { margin: 0 0 10px; color: var(--ink); font-size: 14px; font-weight: 700; }
+        .rank-section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--seg); }
+        .borough-rank { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+        .borough-rank li { display: flex; }
+        .borough-rank button { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 14px; background: #ffffff; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+        .borough-rank button:hover, .borough-rank button[aria-pressed="true"] { border-color: var(--sage); }
+        .borough-rank .num { flex: none; width: 22px; color: var(--ink-3); font-size: 12px; text-align: center; }
+        .borough-rank .chip { flex: none; width: 10px; height: 10px; border-radius: 50%; }
+        .borough-rank .name { flex: 1; min-width: 0; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .borough-rank .value { flex: none; color: var(--ink-2); font-size: 12px; }
+
+        .theme-list { display: grid; gap: 8px; margin: 0 0 16px; padding: 0; border: 0; min-width: 0; }
+        .theme-list legend { margin-bottom: 8px; padding: 0; color: var(--ink-2); font-size: 12px; font-weight: 500; }
+        .legend { margin-top: 0; }
+        .legend-heading { margin: 0 0 10px; color: var(--ink); font-size: 13px; font-weight: 700; }
+        .legend-items { display: grid; gap: 7px; }
+        .legend-item { display: grid; grid-template-columns: 16px 1fr; align-items: center; gap: 8px; color: var(--ink-2); font-size: 11px; }
+        .legend-swatch { width: 16px; height: 12px; border: 1px solid rgba(43, 42, 39, 0.14); border-radius: 4px; }
+        .legend-note { margin: 10px 0 0; color: var(--ink-3); font-size: 10px; line-height: 1.45; }
 
         @media (max-width: 520px) {
             .map-panel { top: calc(var(--app-header-height) + 10px); left: 10px; width: calc(100vw - 20px); max-height: calc(100vh - var(--app-header-height) - 20px); overflow-y: auto; }
         }
     </style>
 </head>
-<body data-active-menu="custom-layer">
-<header th:replace="~{fragments/navigation :: navigation('custom-layer')}"></header>
-<aside id="map-panel" class="map-panel" aria-label="런던 주제도 레이어 선택" hidden>
-    <h1>런던 지역별 GIS 주제도</h1>
-    <p class="description">LSOA 2021 구역 기준입니다. 체크박스는 한 번에 한 레이어만 선택됩니다.</p>
+<body data-active-menu="map">
+<header th:replace="~{fragments/navigation :: navigation('map')}"></header>
+<aside id="map-panel" class="map-panel" aria-label="안전한 동네" hidden>
+    <h1>안전한 동네</h1>
+    <p class="description">하나를 고르면 지도 색과 설명이 바뀌어요.</p>
 
-    <fieldset class="layer-list">
-        <legend>표시할 주제도</legend>
-        <label class="layer-toggle" for="theme-accommodation">
-            <input id="theme-accommodation" type="checkbox" data-theme="accommodation" disabled>
-            숙소 중위 총가격
-        </label>
+    <fieldset class="theme-list">
+        <legend>표시할 정보</legend>
         <label class="layer-toggle" for="theme-safety">
             <input id="theme-safety" type="checkbox" data-theme="safety" checked disabled>
             치안사건률
+        </label>
+        <label class="layer-toggle" for="theme-accommodation">
+            <input id="theme-accommodation" type="checkbox" data-theme="accommodation" disabled>
+            숙소 중위 총가격
         </label>
         <label class="layer-toggle" for="theme-population">
             <input id="theme-population" type="checkbox" data-theme="population" disabled>
@@ -97,16 +93,22 @@
         <p id="legend-note" class="legend-note"></p>
     </section>
 
-    <div id="status" class="status" role="status" aria-live="polite">주제도 데이터를 불러오는 중…</div>
+    <section id="rank-section" class="rank-section" aria-labelledby="rank-heading" hidden>
+        <h2 id="rank-heading" class="step-title">동네 순위</h2>
+        <ol id="borough-rank" class="borough-rank"></ol>
+    </section>
+
+    <div id="status" class="status" role="status" aria-live="polite">데이터를 불러오는 중…</div>
     <div class="attribution">
-        GLA · data.police.uk · ONS · OS Open Greenspace · Kaggle Airbnb<br>
+        GLA · data.police.uk · ONS · Kaggle Airbnb<br>
         Contains National Statistics and OS data © Crown copyright and database right
     </div>
 </aside>
 <aside th:replace="~{custom-layer/panel :: panel}"></aside>
 <aside th:replace="~{restaurant/panel :: panel}"></aside>
 <aside th:replace="~{accommodation/panel :: panel}"></aside>
-<div id="map" aria-label="런던 숙소, 치안, 인구, 녹지 주제도"></div>
+<aside th:replace="~{accommodation/panel :: results}"></aside>
+<div id="map" aria-label="런던 안전한 동네 지도"></div>
 <script th:src="@{/js/custom-layer/panel.js}"></script>
 <script th:src="@{/js/custom-layer/draw.js}"></script>
 <script th:src="@{/js/restaurant/restaurant.js}"></script>
@@ -125,7 +127,7 @@
             note: "표본 5건 이상 LSOA만 표시 · 원본 스냅샷 시점 미상"
         },
         safety: {
-            heading: "연간 인구 1,000명당 치안사건",
+            heading: "인구 1,000명당 연간 범죄 발생",
             valueProperty: "safetyIncidentRate",
             levelProperty: "safetyLevel",
             colors: ["#1a9850", "#91cf60", "#ffffbf", "#fc8d59", "#d73027"],
@@ -167,22 +169,25 @@
             ]
         });
 
-        // Initialize editing before fetching themes so a failed data request does not block drawing.
         new window.CustomLayerDraw(map);
         initRestaurants(map);
         initAccommodations(map);
 
-        const checkboxes = [...document.querySelectorAll("[data-theme]")];
         const legend = document.getElementById("legend");
         const legendHeading = document.getElementById("legend-heading");
         const legendItems = document.getElementById("legend-items");
         const legendNote = document.getElementById("legend-note");
+        const rankList = document.getElementById("borough-rank");
         const status = document.getElementById("status");
         let metadata;
-        let activeTheme = "safety";
         let resumeTimer;
+        let activeTheme = "safety";
+        const rankings = {};
+        const rankHeading = document.getElementById("rank-heading");
+        const rankSection = document.getElementById("rank-section");
+        const checkboxes = [...document.querySelectorAll("[data-theme]")];
 
-        function formatValue(value, config) {
+        function formatValue(value, config = THEMES.safety) {
             return Number(value).toLocaleString("ko-KR", {
                 minimumFractionDigits: config.decimals,
                 maximumFractionDigits: config.decimals
@@ -212,11 +217,10 @@
 
         function renderLegend(themeKey) {
             const config = THEMES[themeKey];
-            const labels = intervalLabels(themeKey);
             legendHeading.textContent = config.heading;
             legendNote.textContent = `${config.note} · 회색은 결측`;
             legendItems.replaceChildren();
-            labels.forEach((label, index) => {
+            intervalLabels(themeKey).forEach((label, index) => {
                 const item = document.createElement("div");
                 const swatch = document.createElement("span");
                 const text = document.createElement("span");
@@ -232,21 +236,22 @@
 
         function applyTheme(themeKey) {
             const config = THEMES[themeKey];
-            // 맛집 관리에서는 음식점 아이콘이 보이도록 주제도를 옅게 한다
-            const fillOpacity = document.body.dataset.activeMenu === "restaurant" ? 0.3 : 0.66;
+            // 맛집 보기에서는 음식점 아이콘이 보이도록 주제도를 옅게 한다
+            const fillOpacity = document.body.dataset.activeMenu === "restaurant" ? 0.3 : 0.5;
             map.data.setStyle((feature) => {
                 const level = feature.getProperty(config.levelProperty);
                 return {
                     fillColor: level ? config.colors[level - 1] : MISSING_COLOR,
                     fillOpacity,
                     strokeColor: "#ffffff",
-                    strokeOpacity: 0.75,
-                    strokeWeight: 0.45,
+                    strokeOpacity: 0.5,
+                    strokeWeight: 0.25,
                     clickable: document.body.dataset.activeMenu === "accommodation"
                 };
             });
             map.data.setMap(map);
             renderLegend(themeKey);
+            renderRanking(themeKey);
         }
 
         function selectTheme(themeKey) {
@@ -269,13 +274,14 @@
                     activeTheme = null;
                     map.data.setMap(null);
                     legend.hidden = true;
+                    rankSection.hidden = true;
                 }
             });
         });
 
-        async function loadThemes() {
+        async function loadSafetyData() {
             const response = await fetch("/data/london-lsoa-themes.json");
-            if (!response.ok) throw new Error(`Theme data HTTP ${response.status}`);
+            if (!response.ok) throw new Error(`Safety data HTTP ${response.status}`);
             return response.json();
         }
 
@@ -288,8 +294,90 @@
             coordinates.forEach((child) => extendBounds(bounds, child));
         }
 
+        // 동네 순위: 각 지표를 자치구 단위로 합산한 뒤 정렬한다.
+        // 숙소 가격은 LSOA 중위가격을 표본 수로 가중 평균한 근사값이다.
+        const RANK = {
+            safety: { title: "안전한 곳부터", ascending: true, scale: 1000,
+                weight: (p) => (p.crimeCount == null || p.population == null) ? null : [p.crimeCount, p.population] },
+            accommodation: { title: "저렴한 곳부터", ascending: true, scale: 1,
+                weight: (p) => (p.accommodationMedianPrice == null || !p.accommodationSampleCount) ? null : [p.accommodationMedianPrice * p.accommodationSampleCount, p.accommodationSampleCount] },
+            population: { title: "인구 많은 곳부터", ascending: false, scale: 1,
+                weight: (p) => (p.population == null || p.areaKm2 == null) ? null : [p.population, p.areaKm2] },
+            greenspace: { title: "녹지 많은 곳부터", ascending: false, scale: 1,
+                weight: (p) => (p.greenspacePercent == null || p.areaKm2 == null) ? null : [p.greenspacePercent * p.areaKm2, p.areaKm2] }
+        };
+
+        function levelFor(value, themeKey) {
+            const breaks = metadata.indicators[themeKey].breaks;
+            const above = breaks.filter((limit) => value > limit).length;
+            if (themeKey === "greenspace") return value <= 0 ? 1 : 2 + above;
+            return 1 + above;
+        }
+
+        function buildRanking(geojson, themeKey) {
+            const config = RANK[themeKey];
+            const groups = new Map();
+            geojson.features.forEach((feature) => {
+                const properties = feature.properties;
+                if (!properties.borough) return;
+                const pair = config.weight(properties);
+                if (!pair) return;
+                const group = groups.get(properties.borough) || { num: 0, den: 0 };
+                group.num += pair[0];
+                group.den += pair[1];
+                groups.set(properties.borough, group);
+            });
+            return [...groups]
+                .filter(([, group]) => group.den > 0)
+                .map(([name, group]) => {
+                    const value = config.scale * group.num / group.den;
+                    return { name, value, level: levelFor(value, themeKey) };
+                })
+                .sort((a, b) => (config.ascending ? a.value - b.value : b.value - a.value));
+        }
+
+        const boroughFeatures = new Map();
+        function focusBorough(name) {
+            const bounds = boroughBounds.get(name);
+            if (bounds && !bounds.isEmpty()) map.fitBounds(bounds, 40);
+            rankList.querySelectorAll("button").forEach((button) => {
+                button.setAttribute("aria-pressed", String(button.dataset.borough === name));
+            });
+        }
+
+        function renderRanking(themeKey) {
+            const ranking = rankings[themeKey] || [];
+            const config = THEMES[themeKey];
+            rankSection.hidden = ranking.length === 0;
+            rankHeading.textContent = `동네 순위 · ${RANK[themeKey].title}`;
+            rankList.replaceChildren();
+            ranking.forEach((entry, index) => {
+                const item = document.createElement("li");
+                const button = document.createElement("button");
+                const num = document.createElement("span");
+                const dot = document.createElement("span");
+                const name = document.createElement("span");
+                const value = document.createElement("span");
+                button.type = "button";
+                button.dataset.borough = entry.name;
+                button.setAttribute("aria-pressed", "false");
+                num.className = "num";
+                num.textContent = String(index + 1);
+                dot.className = "chip";
+                dot.style.backgroundColor = config.colors[entry.level - 1];
+                name.className = "name";
+                name.textContent = entry.name;
+                value.className = "value";
+                value.textContent = `${formatValue(entry.value, config)}${config.suffix}`;
+                button.append(num, dot, name, value);
+                button.addEventListener("click", () => focusBorough(entry.name));
+                item.append(button);
+                rankList.append(item);
+            });
+        }
+
         try {
-            const geojson = await loadThemes();
+            const geojson = await loadSafetyData();
             metadata = geojson.metadata;
             map.data.addGeoJson(geojson);
             geojson.features.forEach((feature) => {
@@ -298,13 +386,14 @@
                 extendBounds(bounds, feature.geometry.coordinates);
                 boroughBounds.set(borough, bounds);
             });
+            Object.keys(THEMES).forEach((key) => { rankings[key] = buildRanking(geojson, key); });
             checkboxes.forEach((checkbox) => checkbox.disabled = false);
             selectTheme("safety");
             status.hidden = true;
         } catch (error) {
             activeTheme = null;
             status.hidden = false;
-            status.textContent = "주제도 데이터를 불러오지 못했습니다. 새로고침해 주세요. 내 레이어 그리기는 계속 사용할 수 있습니다.";
+            status.textContent = "데이터를 불러오지 못했습니다. 새로고침해 주세요. 나만의 장소 지도와 숙소 찾기는 계속 사용할 수 있습니다.";
             console.error(error);
         }
 
@@ -331,7 +420,6 @@
             }));
         });
 
-        const boroughFeatures = new Map();
         map.data.forEach((feature) => {
             const borough = feature.getProperty("borough");
             if (!boroughFeatures.has(borough)) boroughFeatures.set(borough, []);
@@ -347,7 +435,7 @@
         function highlightBorough(borough) {
             (boroughFeatures.get(hoveredBorough) || []).forEach((feature) => map.data.revertStyle(feature));
             hoveredBorough = borough;
-            (boroughFeatures.get(borough) || []).forEach((feature) => map.data.overrideStyle(feature, { fillOpacity: 0.92 }));
+            (boroughFeatures.get(borough) || []).forEach((feature) => map.data.overrideStyle(feature, { fillOpacity: 0.85 }));
         }
         map.data.addListener("mouseover", (event) => {
             if (document.body.dataset.activeMenu !== "accommodation") return;
@@ -358,12 +446,12 @@
                 label.style.cssText = "padding:2px 4px;";
                 const name = document.createElement("div");
                 name.textContent = borough;
-                name.style.cssText = "font-size:12px;font-weight:700;color:#1d2d39;";
+                name.style.cssText = "font-size:12px;font-weight:700;color:#2b2a27;";
                 label.append(name);
                 if (boroughCounts) {
                     const count = document.createElement("div");
                     count.textContent = `숙소 ${(boroughCounts[borough] ?? 0).toLocaleString("ko-KR")}개`;
-                    count.style.cssText = "font-size:11px;color:#40505c;";
+                    count.style.cssText = "font-size:11px;color:#6e6a60;";
                     label.append(count);
                 }
                 boroughTip.setContent(label);

@@ -140,7 +140,7 @@ async function initRestaurants(map) {
             icon: {
                 path: google.maps.SymbolPath.CIRCLE,
                 scale: 7,
-                fillColor: "#e8590c",
+                fillColor: "#c27a3a",
                 fillOpacity: 1,
                 strokeColor: "#ffffff",
                 strokeWeight: 2

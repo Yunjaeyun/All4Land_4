@@ -15,6 +15,8 @@ function initAccommodations(map) {
     const sortSelect = form.querySelector('[name="sort"]');
     const sizeSelect = form.querySelector('[name="size"]');
     const keywordInput = form.querySelector('[name="keyword"]');
+    const count = document.getElementById("accommodation-count");
+    let query = null;
     const infoWindow = new google.maps.InfoWindow({ maxWidth: 320 });
     const entries = [];
     const byKey = new Map();
@@ -41,7 +43,8 @@ function initAccommodations(map) {
     }
 
     function syncSafest() {
-        sortSelect.disabled = safestToggle.checked;
+        const top = safestToggle.checked;
+        sortSelect.disabled = top;
     }
 
     function groupKey(item) {
@@ -158,7 +161,7 @@ function initAccommodations(map) {
             icon: {
                 path: google.maps.SymbolPath.CIRCLE,
                 scale: entry.rank ? 10 : 6,
-                fillColor: "#1971c2",
+                fillColor: "#3d6b4f",
                 fillOpacity: 1,
                 strokeColor: "#ffffff",
                 strokeWeight: 2
@@ -263,21 +266,27 @@ function initAccommodations(map) {
         return params;
     }
 
-    async function search() {
+    async function search(page = 0) {
         const id = ++requestId;
-        const params = buildQuery();
+        const params = page === 0 ? (query = buildQuery()) : query;
+        const top = safestToggle.checked;
         const choice = sizeSelect.value;
         const target = choice === "all" ? ACCOMMODATION_ALL_LIMIT : Number(choice);
         params.set("size", choice === "all" ? ACCOMMODATION_ALL_PAGE_SIZE : target);
+        if (top) params.set("topN", String(Math.min(50, target * 2)));
+        else params.delete("topN");
         searched = true;
         submitButton.disabled = true;
-        clearEntries();
-        setEmpty(null);
+        if (page === 0) {
+            clearEntries();
+            setEmpty(null);
+        }
         try {
-            let page = 0;
+            const before = entries.length;
+            let current = page;
             let body;
             while (true) {
-                params.set("page", page);
+                params.set("page", current);
                 const response = await fetch(`/api/accommodations/search?${params}`);
                 body = await response.json().catch(() => ({}));
                 if (id !== requestId) return;
@@ -291,15 +300,20 @@ function initAccommodations(map) {
                 }
                 addItems(body.items);
                 // 평일/주말 행이 한 숙소로 합쳐지므로, 목록을 채울 때까지 다음 페이지를 이어서 가져옵니다.
-                if (entries.length >= target || !body.hasNext) break;
-                page = body.page + 1;
+                if (top) break;
+                if (entries.length - before >= target || !body.hasNext) break;
+                if (choice === "all" && entries.length >= ACCOMMODATION_ALL_LIMIT) break;
+                current = body.page + 1;
             }
             trimTo(target);
             renumber();
+            count.textContent = top
+                ? `안전한 숙소 상위 ${formatNumber(entries.length)}개`
+                : `${formatNumber(entries.length)}곳`;
             setEmpty(entries.length > 0 ? null : "조건에 맞는 숙소가 없습니다.");
             message.hidden = true;
             if (choice === "all" && body.hasNext) showMessage(`최대 ${ACCOMMODATION_ALL_LIMIT}개까지만 보여드려요.`);
-            fitToResults();
+            if (page === 0) fitToResults();
         } catch (error) {
             showMessage("숙소 검색은 DB에 연결된 상태에서만 이용할 수 있습니다.", true);
         } finally {
@@ -309,19 +323,20 @@ function initAccommodations(map) {
 
     form.addEventListener("submit", (event) => {
         event.preventDefault();
-        search();
+        search(0);
     });
     safestToggle.addEventListener("change", () => {
         syncSafest();
-        if (searched) search();
+        if (searched) search(0);
     });
     sizeSelect.addEventListener("change", () => {
-        if (searched) search();
+        if (searched) search(0);
     });
     resetButton.addEventListener("click", () => {
         form.reset();
         syncSafest();
-        search();
+        markBorough("");
+        search(0);
     });
 
     window.addEventListener("app:menu", (event) => {
@@ -330,41 +345,54 @@ function initAccommodations(map) {
         if (!active) infoWindow.close();
     });
 
-    const keywordLabel = keywordInput.closest("label");
-    const row = document.createElement("div");
-    row.className = "two";
-    const boroughLabel = document.createElement("label");
-    const boroughSelect = document.createElement("select");
-    boroughLabel.textContent = "자치구";
-    boroughSelect.id = "accommodation-borough";
-    boroughSelect.append(new Option("전체", ""));
-    boroughSelect.addEventListener("change", () => {
-        keywordInput.value = boroughSelect.value;
-    });
-    boroughLabel.append(boroughSelect);
-    keywordLabel.replaceWith(row);
-    row.append(keywordLabel, boroughLabel);
+    const boroughBox = document.getElementById("accommodation-boroughs");
+
+    function markBorough(name) {
+        boroughBox.querySelectorAll("button").forEach((button) => {
+            button.setAttribute("aria-pressed", String(button.dataset.borough === name));
+        });
+    }
+
+    function hasBorough(name) {
+        return [...boroughBox.querySelectorAll("button")].some((button) => button.dataset.borough === name);
+    }
+
+    function addBoroughChip(name) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "borough-chip";
+        button.dataset.borough = name;
+        button.setAttribute("aria-pressed", "false");
+        button.textContent = name || "전체";
+        button.addEventListener("click", () => chooseBorough(name));
+        boroughBox.append(button);
+    }
+
+    async function chooseBorough(name) {
+        keywordInput.value = name;
+        markBorough(name);
+        await search();
+    }
 
     async function loadBoroughs() {
         try {
             const response = await fetch("/api/accommodations/boroughs");
             if (!response.ok) return;
             const names = await response.json();
-            names.forEach((name) => boroughSelect.append(new Option(name, name)));
+            names.forEach((name) => addBoroughChip(name));
         } catch (error) {
             console.error(error);
         }
     }
+
+    addBoroughChip("");
+    markBorough("");
     loadBoroughs();
 
     window.addEventListener("accommodation:borough-click", async (event) => {
         const { borough, bounds } = event.detail;
-        if (![...boroughSelect.options].some((option) => option.value === borough)) {
-            boroughSelect.append(new Option(borough, borough));
-        }
-        boroughSelect.value = borough;
-        keywordInput.value = borough;
-        await search();
+        if (!hasBorough(borough)) addBoroughChip(borough);
+        await chooseBorough(borough);
         if (bounds) map.fitBounds(bounds, 40);
     });
 

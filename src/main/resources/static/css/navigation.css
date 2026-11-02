@@ -1,19 +1,34 @@
-:root { --app-header-height: 64px; }
-.app-header { position: relative; z-index: 10; display: flex; align-items: center; gap: 40px; box-sizing: border-box; height: var(--app-header-height); padding: 0 24px; border-bottom: 1px solid #dde5e0; background: #fff; color: #20352e; font-family: Arial, "Noto Sans KR", sans-serif; }
-.app-brand { flex-shrink: 0; color: #20352e; font-size: 16px; font-weight: 700; text-decoration: none; }
-.app-nav { display: flex; align-items: center; align-self: stretch; gap: 28px; min-width: 0; overflow-x: auto; white-space: nowrap; }
-.app-nav > button, .app-nav-pending { display: flex; align-items: center; flex-shrink: 0; gap: 6px; border-bottom: 3px solid transparent; padding: 3px 0 0; color: #50635a; font-size: 14px; text-decoration: none; }
-.app-nav > button:hover { color: #247b65; }
-.app-nav > button[aria-pressed="true"] { border-bottom-color: #247b65; color: #247b65; font-weight: 700; }
-.app-nav-pending { color: #87958d; }
-.app-nav-pending small { border-radius: 4px; padding: 3px 5px; background: #f0f3f1; font-size: 10px; }
-.app-header button:focus-visible { outline: 2px solid #247b65; outline-offset: -2px; }
+:root {
+    --app-header-height: 68px;
+    --ink: #2b2a27;
+    --ink-2: #6e6a60;
+    --ink-3: #8a847a;
+    --line: #dcd5c8;
+    --line-2: #eae4d8;
+    --seg: #efeae0;
+    --field: #fbfaf7;
+    --sage: #3d6b4f;
+    --sage-deep: #2f5440;
+    --sage-soft: #e6ede4;
+    --warn: #b5483a;
+}
+.app-header { position: relative; z-index: 10; display: flex; align-items: center; gap: 40px; box-sizing: border-box; height: var(--app-header-height); padding: 0 28px; border-bottom: 1px solid #e3ded4; background: #fff; color: #2b2a27; font-family: Arial, "Noto Sans KR", sans-serif; }
+.app-brand { display: flex; flex-shrink: 0; align-items: center; gap: 12px; padding: 0; border: 0; background: transparent; color: #2b2a27; text-align: left; }
+.app-logo { flex: none; }
+.app-brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+.app-brand-name { font-size: 17px; font-weight: 800; letter-spacing: -0.4px; }
+.app-brand-name span { font-weight: 400; color: #6e6a60; }
+.app-brand-tagline { margin-top: 3px; color: #8a847a; font-size: 11px; }
+.app-nav { display: flex; align-items: stretch; align-self: stretch; gap: 28px; min-width: 0; overflow-x: auto; white-space: nowrap; }
+.app-nav > button, .app-nav-pending { display: flex; align-items: center; flex-shrink: 0; gap: 6px; border: 0; border-bottom: 3px solid transparent; padding: 0; background: transparent; color: #6e6a60; font-size: 15px; text-decoration: none; }
+.app-nav > button:hover { color: #2b2a27; }
+.app-nav > button[aria-pressed="true"] { border-bottom-color: #3d6b4f; color: #2b2a27; font-weight: 700; }
+.app-nav-pending { color: #a39a8b; }
+.app-nav-pending small { border-radius: 4px; padding: 3px 5px; background: #f0ede6; font-size: 10px; }
+.app-header button { font-family: inherit; cursor: pointer; }
+.app-header button:focus-visible { outline: 2px solid #3d6b4f; outline-offset: -2px; }
 @media (max-width: 720px) {
-    :root { --app-header-height: 104px; }
-    .app-header { flex-direction: column; align-items: stretch; gap: 12px; padding: 14px 16px 0; }
+    :root { --app-header-height: 112px; }
+    .app-header { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 16px 0; }
     .app-nav { flex: 1; gap: 22px; }
 }
-
-.app-header button { font-family: inherit; cursor: pointer; background: transparent; }
-.app-brand { border: 0; padding: 0; text-align: left; }
-.app-nav > button { border-top: 0; border-left: 0; border-right: 0; }
