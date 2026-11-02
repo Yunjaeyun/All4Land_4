@@ -32,7 +32,7 @@ public class RestaurantController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable("id") Long id) {
         restaurantService.delete(id);
     }
 }

@@ -2,12 +2,22 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
 <header class="app-header" th:fragment="navigation(activeMenu)">
-    <button class="app-brand" type="button" data-menu="map">런던 치안·숙소 지도</button>
+    <button class="app-brand" type="button" data-menu="map">
+        <svg class="app-logo" width="38" height="38" viewBox="0 0 36 36" aria-hidden="true">
+            <rect width="36" height="36" rx="10" fill="#3d6b4f"/>
+            <path d="M18 7 C13 7 10 10.8 10 15.2 C10 20.8 18 29 18 29 C18 29 26 20.8 26 15.2 C26 10.8 23 7 18 7 Z" fill="#ffffff"/>
+            <circle cx="18" cy="15.2" r="3.4" fill="#3d6b4f"/>
+        </svg>
+        <span class="app-brand-text">
+            <span class="app-brand-name">SafeStay <span>London</span></span>
+            <span class="app-brand-tagline">런던에서 안심하고 머무는 곳</span>
+        </span>
+    </button>
     <nav class="app-nav" aria-label="주 메뉴">
-        <button type="button" data-menu="map" aria-controls="map-panel" th:attr="aria-pressed=${activeMenu == 'map'}">지도 조회</button>
-        <button type="button" data-menu="accommodation" aria-controls="accommodation-panel" th:attr="aria-pressed=${activeMenu == 'accommodation'}">숙소 검색</button>
-        <button type="button" data-menu="restaurant" aria-controls="restaurant-panel" th:attr="aria-pressed=${activeMenu == 'restaurant'}">맛집 관리</button>
-        <button type="button" data-menu="custom-layer" aria-controls="custom-layer-panel" th:attr="aria-pressed=${activeMenu == 'custom-layer'}">내 레이어</button>
+        <button type="button" data-menu="accommodation" aria-controls="accommodation-panel" th:attr="aria-pressed=${activeMenu == 'accommodation'}">숙소 찾기</button>
+        <button type="button" data-menu="map" aria-controls="map-panel" th:attr="aria-pressed=${activeMenu == 'map'}">안전한 동네</button>
+        <button type="button" data-menu="restaurant" aria-controls="restaurant-panel" th:attr="aria-pressed=${activeMenu == 'restaurant'}">맛집 등록</button>
+        <button type="button" data-menu="custom-layer" aria-controls="custom-layer-panel" th:attr="aria-pressed=${activeMenu == 'custom-layer'}">나만의 장소 지도</button>
     </nav>
 </header>
 </body>
