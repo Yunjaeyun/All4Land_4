@@ -273,8 +273,6 @@ function initAccommodations(map) {
         const choice = sizeSelect.value;
         const target = choice === "all" ? ACCOMMODATION_ALL_LIMIT : Number(choice);
         params.set("size", choice === "all" ? ACCOMMODATION_ALL_PAGE_SIZE : target);
-        if (top) params.set("topN", String(Math.min(50, target * 2)));
-        else params.delete("topN");
         searched = true;
         submitButton.disabled = true;
         if (page === 0) {
@@ -300,7 +298,6 @@ function initAccommodations(map) {
                 }
                 addItems(body.items);
                 // 평일/주말 행이 한 숙소로 합쳐지므로, 목록을 채울 때까지 다음 페이지를 이어서 가져옵니다.
-                if (top) break;
                 if (entries.length - before >= target || !body.hasNext) break;
                 if (choice === "all" && entries.length >= ACCOMMODATION_ALL_LIMIT) break;
                 current = body.page + 1;
@@ -330,7 +327,7 @@ function initAccommodations(map) {
         if (searched) search(0);
     });
     sizeSelect.addEventListener("change", () => {
-        if (searched) search(0);
+        search(0);
     });
     resetButton.addEventListener("click", () => {
         form.reset();
