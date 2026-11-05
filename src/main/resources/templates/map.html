@@ -63,7 +63,7 @@
         }
     </style>
 </head>
-<body data-active-menu="custom-layer">
+<body data-active-menu="custom-layer" th:attr="data-layer-storage=${layerDatabaseStorage ? 'database' : 'memory'}">
 <header th:replace="~{fragments/navigation :: navigation('custom-layer')}"></header>
 <aside id="map-panel" class="map-panel" aria-label="런던 주제도 레이어 선택" hidden>
     <h1>런던 지역별 GIS 주제도</h1>
@@ -105,6 +105,7 @@
 <div id="map" aria-label="런던 숙소, 치안, 인구, 녹지 주제도"></div>
 <script th:src="@{/js/custom-layer/panel.js}"></script>
 <script th:src="@{/js/custom-layer/draw.js}"></script>
+<script th:src="@{/js/custom-layer/storage.js}"></script>
 
 <script>
     const MISSING_COLOR = "#bdbdbd";
@@ -162,7 +163,8 @@
         });
 
         // Initialize editing before fetching themes so a failed data request does not block drawing.
-        new window.CustomLayerDraw(map);
+        const customLayerDraw = new window.CustomLayerDraw(map);
+        new window.CustomLayerStorage(customLayerDraw);
         const checkboxes = [...document.querySelectorAll("[data-theme]")];
         const legend = document.getElementById("legend");
         const legendHeading = document.getElementById("legend-heading");

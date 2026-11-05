@@ -1,0 +1,6 @@
+# Enable explicitly after applying docs/sql/custom-layer-storage.sql.
+# Requires default datasource configuration. Do not combine with map-only.
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate

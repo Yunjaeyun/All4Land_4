@@ -1,13 +1,12 @@
-/* In-memory drawing workspace. No database or browser storage is used. */
+/* A single personal layer of independently tagged features. storage.js handles persistence. */
 window.CustomLayerDraw = class {
     constructor(map) {
         this.map = map;
         this.defaultDoubleClickZoom = Boolean(map.get("disableDoubleClickZoom"));
         this.mode = "select";
         this.items = [];
-        this.layers = [];
         this.filter = null;
-        this.editingLayerId = null;
+        this.editingItemId = null;
         this.vertices = [];
         this.preview = null;
         this.selected = null;
@@ -80,7 +79,7 @@ window.CustomLayerDraw = class {
     }
 
     active() {
-        return document.body.dataset.activeMenu === "custom-layer" && !document.getElementById("layer-add").hidden;
+        return !this.storageBusy && document.body.dataset.activeMenu === "custom-layer" && !document.getElementById("layer-add").hidden;
     }
     color() { return document.getElementById("draw-color").value; }
     style(type, color) {
@@ -102,6 +101,10 @@ window.CustomLayerDraw = class {
         this.vertices = [];
     }
     setMode(mode) {
+        if (mode !== "select" && this.items.some((item) => !item.registered)) {
+            this.message.textContent = "현재 도형의 이름·월·시간을 입력해 등록하거나 선택 삭제한 뒤 새 도형을 그려주세요.";
+            return;
+        }
         this.clearPreview();
         this.select(null);
         this.mode = mode;
@@ -125,14 +128,13 @@ window.CustomLayerDraw = class {
     select(item) {
         if (this.selected) this.selected.overlay.setOptions({ editable: false, draggable: false });
         this.selected = item;
-        const layer = this.layers.find((entry) => entry.id === item?.layerId);
-        document.getElementById("layer-details").hidden = !layer;
-        if (layer) {
-            document.getElementById("layer-details-title").textContent = layer.name;
-            document.getElementById("layer-details-meta").textContent = `${layer.month}월 ${layer.time}`;
+        document.getElementById("layer-details").hidden = !item?.registered;
+        if (item?.registered) {
+            document.getElementById("layer-details-title").textContent = item.name;
+            document.getElementById("layer-details-meta").textContent = `${this.labels[item.type]} · ${item.month}월 ${item.time}`;
             const photo = document.getElementById("layer-details-photo");
-            photo.hidden = !layer.photoUrl;
-            if (layer.photoUrl) photo.src = layer.photoUrl;
+            photo.hidden = !item.photoUrl;
+            if (item.photoUrl) photo.src = item.photoUrl;
             else photo.removeAttribute("src");
         }
         if (item && this.active()) {
@@ -147,7 +149,7 @@ window.CustomLayerDraw = class {
         document.getElementById("draw-cancel").disabled = this.mode === "select";
         const minimum = this.mode === "polygon" ? 3 : 2;
         document.getElementById("draw-finish").disabled = !["polygon", "polyline"].includes(this.mode) || this.vertices.length < minimum;
-        const count = this.items.filter((item) => !item.layerId).length;
+        const count = this.items.filter((item) => !item.registered).length;
         document.getElementById("draw-count").textContent = `등록 대기 도형 ${count}개`;
     }
     click(latLng) {
@@ -212,16 +214,25 @@ window.CustomLayerDraw = class {
         this.setMode("select");
         this.select(this.items.at(-1));
     }
-    add(type, geometry) {
-        const item = { id: this.nextId++, type, color: this.color(), layerId: null };
+    add(type, geometry, metadata = null) {
+        if (!metadata && this.items.some((item) => !item.registered)) {
+            this.message.textContent = "이미 그린 도형을 먼저 등록하거나 삭제하세요.";
+            return null;
+        }
+        const item = { id: metadata?.id ?? this.nextId++, type, color: this.color(), registered: Boolean(metadata),
+            visible: true, photoUrl: null, ...metadata };
+        this.nextId = Math.max(this.nextId, item.id + 1);
         item.overlay = this.make(type, geometry, item.color);
         item.overlay.setOptions({ clickable: this.mode === "select" });
         item.overlay.addListener("click", () => {
             if (this.active() && this.mode === "select") this.select(item);
         });
         this.items.push(item);
-        this.message.textContent = `${this.labels[type]} 추가됨 · 도형을 더 그리거나 레이어를 등록하세요.`;
+        this.message.textContent = `${this.labels[type]} 추가됨 · 이 항목의 이름·월·시간을 입력하고 등록하세요.`;
+        if (!metadata) { this.setMode("select"); this.select(item); }
+        this.refresh();
         this.updateActions();
+        return item;
     }
     removeSelected() {
         if (!this.selected) return;
@@ -230,8 +241,8 @@ window.CustomLayerDraw = class {
         item.overlay.setMap(null);
         google.maps.event.clearInstanceListeners(item.overlay);
         this.items = this.items.filter((entry) => entry !== item);
-        const emptyLayers = this.layers.filter((layer) => !this.items.some((entry) => entry.layerId === layer.id));
-        emptyLayers.forEach((layer) => this.deleteLayer(layer.id));
+        if (item.photoUrl) URL.revokeObjectURL(item.photoUrl);
+        if (this.editingItemId === item.id) this.closeEdit();
         this.refresh();
         this.updateActions();
     }
@@ -240,50 +251,46 @@ window.CustomLayerDraw = class {
         const month = Number(document.getElementById("layer-month").value);
         const time = document.getElementById("layer-time").value;
         if (this.vertices.length) { this.message.textContent = "진행 중인 그리기를 완료하거나 취소하세요."; return; }
-        const drafts = this.items.filter((item) => !item.layerId);
-        if (!name || !time || !month || !drafts.length) {
-            this.message.textContent = "이름·월·시간을 입력하고 도형을 하나 이상 그려주세요.";
+        const draft = this.items.find((item) => !item.registered);
+        if (!name || !time || !month || !draft) {
+            this.message.textContent = "이름·월·시간을 입력하고 등록할 도형을 하나 그려주세요.";
             return;
         }
         if (!this.validMetadata(name, month, time)) return;
         const file = document.getElementById("layer-photo").files?.[0];
         if (!this.validPhoto(file)) return;
-        const layer = { id: this.nextId++, name, month, time, visible: true,
-            photoUrl: file ? URL.createObjectURL(file) : null };
-        drafts.forEach((item) => { item.layerId = layer.id; });
-        this.layers.push(layer);
+        Object.assign(draft, { name, month, time, registered: true, photoUrl: file ? URL.createObjectURL(file) : null });
         this.setMode("select");
         this.refresh();
         document.getElementById("layer-name").value = "";
         document.getElementById("layer-photo").value = "";
         window.dispatchEvent(new CustomEvent("custom-layer:photo-reset"));
-        this.message.textContent = `‘${name}’ 레이어에 도형 ${drafts.length}개를 등록했습니다. 현재 화면에서만 유지됩니다.`;
+        this.message.textContent = `‘${name}’ 항목을 나만의 레이어에 등록했습니다. ‘서버 저장’을 눌러 보관하세요.`;
         this.updateActions();
     }
-    renderLayers() {
+    renderItems() {
         const list = document.getElementById("draw-layers");
         list.replaceChildren();
-        const layers = this.layers.filter((layer) => this.matches(layer));
-        if (!layers.length) {
+        const items = this.items.filter((item) => item.registered && this.matches(item));
+        if (!items.length) {
             const empty = document.createElement("li");
             empty.className = "layer-hint";
-            empty.textContent = this.layers.length ? "조건에 맞는 레이어가 없습니다." : "등록한 레이어가 없습니다. 도형을 그려 등록하세요.";
+            empty.textContent = this.items.some((item) => item.registered) ? "조건에 맞는 장소·도형이 없습니다." : "등록한 장소·도형이 없습니다.";
             list.append(empty);
         }
-        layers.forEach((layer) => {
+        items.forEach((item) => {
             const row = document.createElement("li");
             const button = document.createElement("button");
-            const items = this.items.filter((item) => item.layerId === layer.id);
             button.type = "button";
-            button.textContent = `${layer.name} · ${layer.month}월 ${layer.time} · 도형 ${items.length}개`;
+            button.textContent = `${item.name} · ${this.labels[item.type]} · ${item.month}월 ${item.time}`;
             button.addEventListener("click", () => {
-                if (!layer.visible) layer.visible = true;
+                if (!item.visible) item.visible = true;
                 this.setMode("select");
-                this.select(items[0]);
+                this.select(item);
                 this.refresh();
-                const overlay = items[0].overlay;
-                if (items[0].type === "marker") this.map.panTo(overlay.getPosition());
-                else if (items[0].type === "circle" || items[0].type === "rectangle") this.map.fitBounds(overlay.getBounds());
+                const overlay = item.overlay;
+                if (item.type === "marker") this.map.panTo(overlay.getPosition());
+                else if (item.type === "circle" || item.type === "rectangle") this.map.fitBounds(overlay.getBounds());
                 else {
                     const bounds = new google.maps.LatLngBounds();
                     overlay.getPath().forEach((point) => bounds.extend(point));
@@ -297,15 +304,15 @@ window.CustomLayerDraw = class {
                 const control = document.createElement("button");
                 control.type = "button";
                 control.textContent = label;
-                control.setAttribute("aria-label", `${layer.name} ${label}`);
+                control.setAttribute("aria-label", `${item.name} ${label}`);
                 control.addEventListener("click", callback);
                 actions.append(control);
                 return control;
             };
-            const visibility = action(layer.visible ? "숨기기" : "표시", () => this.toggleLayer(layer.id));
-            visibility.setAttribute("aria-pressed", String(layer.visible));
-            action("정보 수정", () => this.editLayer(layer.id));
-            action("레이어 삭제", () => this.deleteLayer(layer.id));
+            const visibility = action(item.visible ? "숨기기" : "표시", () => this.toggleItem(item.id));
+            visibility.setAttribute("aria-pressed", String(item.visible));
+            action("정보 수정", () => this.editItem(item.id));
+            action("항목 삭제", () => this.deleteItem(item.id));
             row.append(actions);
             list.append(row);
         });
@@ -334,15 +341,15 @@ window.CustomLayerDraw = class {
     }
     refresh() {
         this.items.forEach((item) => {
-            const layer = this.layers.find((entry) => entry.id === item.layerId);
-            const shown = layer ? layer.visible && this.matches(layer)
+            const shown = item.registered ? item.visible && this.matches(item)
                 : document.body.dataset.activeMenu === "custom-layer" && !document.getElementById("layer-add").hidden;
             if (!shown && this.selected === item) this.select(null);
             item.overlay.setMap(shown ? this.map : null);
         });
-        this.renderLayers();
-        const matches = this.layers.filter((layer) => this.matches(layer));
-        document.getElementById("layer-query-status").textContent = `전체 ${this.layers.length}개 중 ${matches.length}개 일치 · 지도 표시 ${matches.filter((layer) => layer.visible).length}개`;
+        this.renderItems();
+        const registered = this.items.filter((item) => item.registered);
+        const matches = registered.filter((item) => this.matches(item));
+        document.getElementById("layer-query-status").textContent = `전체 항목 ${registered.length}개 중 ${matches.length}개 일치 · 지도 표시 ${matches.filter((item) => item.visible).length}개`;
     }
     query() {
         const month = Number(document.getElementById("query-month").value);
@@ -357,35 +364,32 @@ window.CustomLayerDraw = class {
         this.select(null);
         this.refresh();
     }
-    toggleLayer(id) {
-        const layer = this.layers.find((entry) => entry.id === id);
+    toggleItem(id) {
+        const layer = this.items.find((entry) => entry.id === id && entry.registered);
         if (!layer) return;
         layer.visible = !layer.visible;
         this.refresh();
     }
-    deleteLayer(id) {
-        const layer = this.layers.find((entry) => entry.id === id);
+    deleteItem(id) {
+        const layer = this.items.find((entry) => entry.id === id);
         if (!layer) return;
-        if (this.selected?.layerId === id) this.select(null);
-        this.items.filter((item) => item.layerId === id).forEach((item) => {
-            item.overlay.setMap(null);
-            google.maps.event.clearInstanceListeners(item.overlay);
-        });
-        this.items = this.items.filter((item) => item.layerId !== id);
-        this.layers = this.layers.filter((entry) => entry.id !== id);
+        if (this.selected === layer) this.select(null);
+        layer.overlay.setMap(null);
+        google.maps.event.clearInstanceListeners(layer.overlay);
+        this.items = this.items.filter((entry) => entry.id !== id);
         if (layer.photoUrl) URL.revokeObjectURL(layer.photoUrl);
-        if (this.editingLayerId === id) this.closeEdit();
+        if (this.editingItemId === id) this.closeEdit();
         this.refresh();
         this.updateActions();
     }
     closeEdit() {
-        this.editingLayerId = null;
+        this.editingItemId = null;
         document.getElementById("layer-edit-form").hidden = true;
     }
-    editLayer(id) {
-        const layer = this.layers.find((entry) => entry.id === id);
+    editItem(id) {
+        const layer = this.items.find((entry) => entry.id === id && entry.registered);
         if (!layer) return;
-        this.editingLayerId = id;
+        this.editingItemId = id;
         document.getElementById("edit-layer-name").value = layer.name;
         document.getElementById("edit-layer-month").value = String(layer.month);
         document.getElementById("edit-layer-time").value = layer.time;
@@ -396,7 +400,7 @@ window.CustomLayerDraw = class {
         document.getElementById("edit-layer-name").focus();
     }
     saveEdit() {
-        const layer = this.layers.find((entry) => entry.id === this.editingLayerId);
+        const layer = this.items.find((entry) => entry.id === this.editingItemId);
         if (!layer) return;
         const name = document.getElementById("edit-layer-name").value.trim();
         const month = Number(document.getElementById("edit-layer-month").value);
@@ -413,9 +417,9 @@ window.CustomLayerDraw = class {
             layer.photoUrl = file ? URL.createObjectURL(file) : null;
         }
         Object.assign(layer, { name, month, time });
-        if (this.selected?.layerId === layer.id) this.select(this.selected);
+        if (this.selected === layer) this.select(this.selected);
         this.closeEdit();
         this.refresh();
-        this.message.textContent = "레이어 정보를 수정했습니다.";
+        this.message.textContent = "장소·도형 정보를 수정했습니다.";
     }
 };
