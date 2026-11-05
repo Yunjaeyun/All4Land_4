@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
@@ -22,33 +23,42 @@
                 <div><label for="layer-time">시간</label><input id="layer-time" name="time" type="time" value="18:00" required></div>
             </div>
             <fieldset class="draw-tools">
-                <legend>지도 그리기</legend>
-                <div class="draw-modes" role="group" aria-label="그리기 도구">
-                    <button type="button" data-draw-mode="select" aria-pressed="true" disabled>선택·편집</button>
-                    <button type="button" data-draw-mode="marker" aria-pressed="false" disabled>마커</button>
-                    <button type="button" data-draw-mode="polyline" aria-pressed="false" disabled>선</button>
-                    <button type="button" data-draw-mode="polygon" aria-pressed="false" disabled>다각형</button>
-                    <button type="button" data-draw-mode="rectangle" aria-pressed="false" disabled>사각형</button>
-                    <button type="button" data-draw-mode="circle" aria-pressed="false" disabled>원</button>
+                <legend>지도에 표시하기</legend>
+                <div class="draw-modes" role="group" aria-label="표시 도구">
+                    <button type="button" data-draw-mode="select" aria-pressed="true" disabled>선택·수정</button>
+                    <button type="button" data-draw-mode="marker" aria-pressed="false" disabled>장소 찍기</button>
+                    <button type="button" data-draw-mode="polyline" aria-pressed="false" disabled>동선 그리기</button>
+                    <button type="button" data-draw-mode="polygon" aria-pressed="false" disabled>구역 그리기</button>
+                    <button type="button" data-draw-mode="rectangle" aria-pressed="false" disabled>사각 구역</button>
+                    <button type="button" data-draw-mode="circle" aria-pressed="false" disabled>원형 구역</button>
                 </div>
-                <label for="draw-color">도형 색상</label><input id="draw-color" type="color" value="#247b65">
+                <details class="layer-more">
+                    <summary>표시 색 바꾸기</summary>
+                    <label for="draw-color">표시 색상</label><input id="draw-color" type="color" value="#3d6b4f">
+                </details>
                 <div class="draw-actions">
-                    <button id="draw-finish" type="button" disabled>그리기 완료</button>
-                    <button id="draw-cancel" type="button" disabled>그리기 취소</button>
-                    <button id="draw-delete" type="button" disabled>선택 삭제</button>
+                    <button id="draw-finish" type="button" disabled>완료</button>
+                    <button id="draw-cancel" type="button" disabled>취소</button>
+                    <button id="draw-delete" type="button" disabled>선택 지우기</button>
                 </div>
-                <p id="draw-status" class="layer-hint" role="status">지도가 준비되면 그리기 도구가 활성화됩니다.</p>
-                <p id="draw-count" class="layer-hint">등록 대기 도형 0개</p>
+                <p id="draw-status" class="layer-hint" role="status">지도가 준비되면 도구를 사용할 수 있어요.</p>
+                <p id="draw-count" class="layer-hint">아직 저장하지 않은 표시 0개</p>
             </fieldset>
-            <label for="layer-photo">사진</label>
-            <input id="layer-photo" type="file" accept="image/jpeg,image/png,image/webp">
-            <img id="layer-photo-preview" alt="선택한 장소 사진 미리보기" hidden>
-            <p class="layer-hint">마커 도구에서는 지도 클릭 또는 좌표 입력으로 마커를 추가할 수 있습니다.</p>
-            <div class="layer-fields">
-                <div><label for="layer-latitude">위도</label><input id="layer-latitude" type="number" min="-90" max="90" step="any" placeholder="51.5074"></div>
-                <div><label for="layer-longitude">경도</label><input id="layer-longitude" type="number" min="-180" max="180" step="any" placeholder="-0.1278"></div>
-            </div>
-            <button id="add-coordinate-marker" type="button">좌표에 마커 추가</button>
+            <details class="layer-more">
+                <summary>사진 추가 (선택)</summary>
+                <label for="layer-photo">장소 사진 (5MB 이하)</label>
+                <input id="layer-photo" type="file" accept="image/jpeg,image/png,image/webp">
+                <img id="layer-photo-preview" alt="선택한 장소 사진 미리보기" hidden>
+            </details>
+            <details class="layer-more">
+                <summary>좌표로 장소 찍기 (선택)</summary>
+                <p class="layer-hint">지도를 찍기 어렵다면 위도·경도를 직접 적어 보세요. 런던 중심은 51.5074, -0.1278 입니다.</p>
+                <div class="layer-fields">
+                    <div><label for="layer-latitude">위도</label><input id="layer-latitude" type="number" min="-90" max="90" step="any" placeholder="51.5074"></div>
+                    <div><label for="layer-longitude">경도</label><input id="layer-longitude" type="number" min="-180" max="180" step="any" placeholder="-0.1278"></div>
+                </div>
+                <button id="add-coordinate-marker" type="button">이 좌표에 찍기</button>
+            </details>
             <p id="layer-feedback" class="layer-hint" role="status"></p>
             <button id="layer-register" class="layer-submit" type="submit" disabled>장소·도형 등록</button>
         </form>
@@ -84,7 +94,7 @@
             <label for="edit-layer-photo">사진 교체</label><input id="edit-layer-photo" type="file" accept="image/jpeg,image/png,image/webp">
             <label class="layer-check"><input id="edit-remove-photo" type="checkbox"> 기존 사진 제거</label>
             <p id="layer-edit-status" class="layer-hint" role="status"></p>
-            <button class="layer-submit" type="submit">수정 적용</button>
+            <button class="layer-submit" type="submit">수정 저장</button>
             <button id="layer-edit-cancel" class="layer-secondary" type="button">수정 취소</button>
         </form>
     </section>

@@ -1,10 +1,13 @@
 spring:
   config:
-    import: optional:classpath:application-local.yml
+    # 로컬 실행(IntelliJ 등)에서는 docker compose와 같은 .env를 읽는다. 실제 환경변수가 있으면 그 값이 우선한다
+    import:
+      - optional:file:.env[.properties]
+      - optional:classpath:application-local.yml
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: ${DB_URL:jdbc:postgresql://localhost:${DB_PORT:5433}/${POSTGRES_DB:all4land}}
+    username: ${DB_USERNAME:${POSTGRES_USER:}}
+    password: ${DB_PASSWORD:${POSTGRES_PASSWORD:}}
   jpa:
     hibernate:
       ddl-auto: update

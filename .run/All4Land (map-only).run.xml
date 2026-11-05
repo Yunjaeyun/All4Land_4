@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="All4Land (map-only)" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="com.example.AllForLand_SideProj.AllForLandSideProjApplication" />
+    <module name="AllForLand_SideProj.main" />
+    <option name="PROGRAM_PARAMETERS" value="--spring.profiles.active=map-only" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

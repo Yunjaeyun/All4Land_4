@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside id="restaurant-panel" class="map-panel restaurant-panel" th:fragment="panel" aria-label="맛집 등록" hidden>
+    <h1>맛집 등록</h1>
+    <p class="description">지도에서 맛집을 확인하고, 가고 싶은 곳을 직접 추가할 수 있어요. 등록한 곳은 주변 치안 등급과 함께 보여요.</p>
+    <div class="restaurant-row">
+        <label class="layer-toggle" for="layer-restaurant">
+            <input id="layer-restaurant" type="checkbox" checked disabled>
+            맛집 보기
+        </label>
+        <button id="restaurant-add" class="button" type="button" disabled>맛집 추가하기</button>
+    </div>
+    <p id="restaurant-hint" class="restaurant-hint" hidden>
+        지도의 음식점 아이콘이나 추가하고 싶은 위치를 클릭하세요.
+        <button id="restaurant-pick-cancel" class="button secondary" type="button">취소</button>
+    </p>
+    <form id="restaurant-form" class="restaurant-form" hidden>
+        <p id="restaurant-coords" class="coords"></p>
+        <label>가게 이름 *
+            <input name="name" required maxlength="150" autocomplete="off">
+        </label>
+        <label>주소 *
+            <input name="address" required maxlength="255" autocomplete="off">
+        </label>
+        <label>음식 종류
+            <input name="cuisineType" maxlength="50" placeholder="예: Fish and Chips" autocomplete="off">
+        </label>
+        <label>평점 (0~5)
+            <input name="rating" type="number" min="0" max="5" step="0.1">
+        </label>
+        <div class="actions">
+            <button id="restaurant-form-cancel" class="button secondary" type="button">취소</button>
+            <button id="restaurant-submit" class="button" type="submit">저장하기</button>
+        </div>
+    </form>
+    <p id="restaurant-message" class="restaurant-message" role="status" aria-live="polite" hidden></p>
+    <section class="restaurant-list-section" aria-labelledby="restaurant-list-heading">
+        <h2 id="restaurant-list-heading">추가한 맛집 <span id="restaurant-count">0</span></h2>
+        <ul id="restaurant-list" class="restaurant-list"></ul>
+        <p id="restaurant-empty" class="restaurant-empty" hidden>아직 추가한 맛집이 없어요.</p>
+    </section>
+</aside>
+</body>
+</html>

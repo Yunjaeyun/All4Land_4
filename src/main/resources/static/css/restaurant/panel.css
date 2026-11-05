@@ -1,0 +1,45 @@
+.restaurant-row { display: flex; gap: 8px; align-items: stretch; }
+.restaurant-row .layer-toggle { flex: 1; }
+.restaurant-panel .button {
+    min-height: 48px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--ink);
+    color: #ffffff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+}
+.restaurant-panel .button.secondary { background: transparent; color: var(--ink-2); font-weight: 500; }
+.restaurant-panel .button.danger { min-height: 36px; padding: 0 12px; border: 1px solid #e6c3bb; background: #ffffff; color: var(--warn); font-weight: 500; }
+.restaurant-panel .button:disabled { cursor: not-allowed; opacity: 0.5; }
+.restaurant-panel .button:focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; }
+.restaurant-hint { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0 0; color: var(--sage); font-size: 12px; font-weight: 700; }
+.restaurant-panel .restaurant-hint .button { min-height: 36px; }
+.restaurant-form { display: grid; gap: 10px; margin-top: 12px; }
+.restaurant-form label { display: grid; gap: 6px; color: var(--ink-2); font-size: 12px; font-weight: 500; }
+.restaurant-form input { min-height: 40px; min-width: 0; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--field); color: var(--ink); font: inherit; font-size: 14px; }
+.restaurant-form input:focus-visible { outline: 2px solid var(--sage); outline-offset: 1px; }
+.restaurant-form .coords { margin: 0; color: var(--ink-3); font-size: 11px; }
+.restaurant-form .actions { display: flex; justify-content: flex-end; gap: 8px; }
+.restaurant-message { margin: 10px 0 0; color: var(--sage); font-size: 12px; }
+.restaurant-message.error { color: var(--warn); }
+.restaurant-info { max-width: 260px; color: var(--ink); font-size: 12px; line-height: 1.55; }
+.restaurant-info strong { display: block; margin-bottom: 3px; font-size: 14px; }
+.restaurant-list-section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--seg); }
+.restaurant-list-section h2 { margin: 0 0 10px; color: var(--ink); font-size: 15px; font-weight: 700; }
+.restaurant-list-section h2 span { color: var(--ink-3); font-weight: 400; }
+.restaurant-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.restaurant-list li { display: flex; align-items: center; gap: 8px; }
+.restaurant-list .restaurant-item { flex: 1; min-width: 0; padding: 12px; border: 1px solid var(--line-2); border-radius: 16px; background: #ffffff; color: var(--ink); cursor: pointer; font: inherit; text-align: left; }
+.restaurant-list .restaurant-item:hover { border-color: var(--sage); }
+.restaurant-list .restaurant-item strong, .restaurant-list .restaurant-item span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.restaurant-list .restaurant-item strong { font-size: 13px; font-weight: 500; }
+.restaurant-list .restaurant-item span { margin-top: 2px; color: var(--ink-3); font-size: 11px; }
+.restaurant-empty { margin: 0; color: var(--ink-3); font-size: 12px; }
+.layer-toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--field); color: var(--ink); cursor: pointer; font-size: 13px; font-weight: 500; }
+.layer-toggle:has(input:checked) { border-color: var(--sage); background: #ffffff; font-weight: 700; }
+.layer-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--sage); }
+.layer-toggle input:disabled { cursor: wait; }

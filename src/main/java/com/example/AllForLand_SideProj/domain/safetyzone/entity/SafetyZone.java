@@ -4,7 +4,7 @@ package com.example.AllForLand_SideProj.domain.safetyzone.entity;
 import com.example.AllForLand_SideProj.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.MultiPolygon;
 
 import java.math.BigDecimal;
 
@@ -27,8 +27,8 @@ public class SafetyZone extends BaseEntity {
     @Column(name = "lsoa_name", nullable = false, length = 100)
     private String lsoaName;
 
-    @Column(name = "geometry", nullable = false, columnDefinition = "geometry(Polygon,4326)")
-    private Polygon geometry;
+    @Column(name = "geometry", nullable = false, columnDefinition = "geometry(MultiPolygon,4326)")
+    private MultiPolygon geometry;
 
     @Column(name = "population", nullable = false)
     private Integer population;
