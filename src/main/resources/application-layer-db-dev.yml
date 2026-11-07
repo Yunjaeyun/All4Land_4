@@ -1,0 +1,4 @@
+# Explicit login bypass for local development only; ignored when prod is active.
+# Requires layer-db as well and an existing test user in the local DB.
+custom-layer:
+  development-user-id: ${CUSTOM_LAYER_DEV_USER_ID:0}

@@ -58,7 +58,7 @@
     </style>
     <link rel="stylesheet" th:href="@{/css/mobile.css}">
 </head>
-<body data-active-menu="map">
+<body data-active-menu="map" th:attr="data-layer-storage=${layerDatabaseStorage ? 'database' : 'memory'}">
 <header th:replace="~{fragments/navigation :: navigation('map')}"></header>
 <aside id="map-panel" class="map-panel" aria-label="안전한 동네" hidden>
     <h1>안전한 동네</h1>
@@ -107,7 +107,9 @@
 <aside th:replace="~{accommodation/panel :: results}"></aside>
 <div id="map" aria-label="런던 안전한 동네 지도"></div>
 <script th:src="@{/js/custom-layer/panel.js}"></script>
-<script th:src="@{/js/custom-layer/draw.js}"></script>
+<script th:src="@{/js/custom-layer/draw.js(v=4)}"></script>
+<script th:src="@{/js/custom-layer/storage.js(v=2)}"></script>
+<script th:src="@{/js/custom-layer/ranking.js(v=4)}"></script>
 <script th:src="@{/js/restaurant/restaurant.js}"></script>
 <script th:src="@{/js/accommodation/accommodation.js}"></script>
 <script th:src="@{/js/mobile.js}"></script>
@@ -169,10 +171,17 @@
             ]
         });
 
-        new window.CustomLayerDraw(map);
+        // Initialize editing before fetching themes so a failed data request does not block drawing.
+        const customLayerDraw = new window.CustomLayerDraw(map);
+        const customLayerStorage = new window.CustomLayerStorage(customLayerDraw);
+        let selectedRankingBorough = null;
+        new window.CustomLayerRanking(customLayerDraw, customLayerStorage, map, (borough) => {
+            if (selectedRankingBorough === borough) return;
+            selectedRankingBorough = borough;
+            renderMapData();
+        });
         initRestaurants(map);
         initAccommodations(map);
-
         const legend = document.getElementById("legend");
         const legendHeading = document.getElementById("legend-heading");
         const legendItems = document.getElementById("legend-items");
@@ -234,8 +243,31 @@
             legend.hidden = false;
         }
 
-        function applyTheme(themeKey) {
-            const config = THEMES[themeKey];
+        function inPersonalRanking() {
+            return document.body.dataset.activeMenu === "custom-layer" && !document.getElementById("layer-ranking").hidden;
+        }
+
+        function syncMapDataVisibility() {
+            const visible = inPersonalRanking() ? selectedRankingBorough !== null : activeTheme !== null;
+            map.data.setMap(metadata && visible ? map : null);
+        }
+
+        function renderMapData() {
+            if (!metadata) return;
+            if (inPersonalRanking()) {
+                map.data.setStyle((feature) => ({
+                    visible: feature.getProperty("borough") === selectedRankingBorough,
+                    clickable: false, fillColor: "#247b65", fillOpacity: 0.2,
+                    strokeColor: "#247b65", strokeOpacity: 0.8, strokeWeight: 1
+                }));
+                syncMapDataVisibility();
+                return;
+            }
+            if (!activeTheme) {
+                syncMapDataVisibility();
+                return;
+            }
+            const config = THEMES[activeTheme];
             // 맛집 보기에서는 음식점 아이콘이 보이도록 주제도를 옅게 한다
             const fillOpacity = document.body.dataset.activeMenu === "restaurant" ? 0.3 : 0.5;
             map.data.setStyle((feature) => {
@@ -249,7 +281,11 @@
                     clickable: document.body.dataset.activeMenu === "accommodation"
                 };
             });
-            map.data.setMap(map);
+            syncMapDataVisibility();
+        }
+
+        function applyTheme(themeKey) {
+            renderMapData();
             renderLegend(themeKey);
             renderRanking(themeKey);
         }
@@ -264,7 +300,9 @@
 
         window.addEventListener("app:menu", () => {
             if (activeTheme && metadata) applyTheme(activeTheme);
+            else renderMapData();
         });
+        window.addEventListener("custom-layer:tab", renderMapData);
 
         checkboxes.forEach((checkbox) => {
             checkbox.addEventListener("change", () => {
@@ -398,14 +436,14 @@
         }
 
         function suspendRendering() {
-            if (!activeTheme) return;
+            if (!activeTheme && !selectedRankingBorough) return;
             clearTimeout(resumeTimer);
             map.data.setMap(null);
         }
         function resumeRendering() {
             clearTimeout(resumeTimer);
             resumeTimer = setTimeout(() => {
-                if (activeTheme) map.data.setMap(map);
+                syncMapDataVisibility();
             }, 100);
         }
         map.addListener("zoom_changed", suspendRendering);

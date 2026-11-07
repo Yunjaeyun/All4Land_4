@@ -18,8 +18,8 @@ public class UserCustomLayer extends BaseEntity {
     @Column(name = "custom_layer_id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
     private User user;
 
     @Column(name = "layer_name", nullable = false, length = 100)

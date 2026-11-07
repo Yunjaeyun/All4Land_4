@@ -2,16 +2,21 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
-<aside id="custom-layer-panel" class="map-panel custom-layer-panel" th:fragment="panel" aria-label="나만의 장소 지도">
+<aside id="custom-layer-panel" class="map-panel custom-layer-panel" th:fragment="panel" aria-label="내 레이어">
     <h1>나만의 장소 지도</h1>
-    <p class="description">좋아하는 장소를 지도에 표시해 두고, 시간대별로 다시 찾아볼 수 있어요.</p>
-    <div class="layer-tabs" role="tablist" aria-label="장소 작업">
-        <button id="layer-add-tab" type="button" role="tab" aria-controls="layer-add" aria-selected="true" data-layer-tab="layer-add">장소 표시하기</button>
-        <button id="layer-query-tab" type="button" role="tab" aria-controls="layer-query" aria-selected="false" tabindex="-1" data-layer-tab="layer-query">이 시간에 갈 곳 찾기</button>
+    <p class="layer-hint">나만의 레이어 하나에 장소·도형을 모읍니다. 각 항목의 월·시간을 지정해 조회하세요.</p>
+    <div class="layer-row-actions">
+        <button id="layer-server-save" class="layer-secondary" type="button" disabled>변경사항 저장</button>
+    </div>
+    <p id="layer-storage-status" class="layer-hint" role="status">지도가 준비되면 저장된 레이어를 불러옵니다.</p>
+    <div class="layer-tabs" role="tablist" aria-label="레이어 작업">
+        <button id="layer-add-tab" type="button" role="tab" aria-controls="layer-add" aria-selected="true" data-layer-tab="layer-add">장소·도형 추가</button>
+        <button id="layer-query-tab" type="button" role="tab" aria-controls="layer-query" aria-selected="false" tabindex="-1" data-layer-tab="layer-query">조건 조회</button>
+        <button id="layer-ranking-tab" type="button" role="tab" aria-controls="layer-ranking" aria-selected="false" tabindex="-1" data-layer-tab="layer-ranking">여행지 찾기</button>
     </div>
     <section id="layer-add" role="tabpanel" aria-labelledby="layer-add-tab">
         <form id="layer-add-form">
-            <label for="layer-name">장소 이름</label>
+            <label for="layer-name">장소·도형 이름</label>
             <input id="layer-name" name="name" maxlength="100" placeholder="9월 오후 6시 노을 명소" required>
             <div class="layer-fields">
                 <div><label for="layer-month">월</label><select id="layer-month" name="month" class="month-options"></select></div>
@@ -55,7 +60,7 @@
                 <button id="add-coordinate-marker" type="button">이 좌표에 찍기</button>
             </details>
             <p id="layer-feedback" class="layer-hint" role="status"></p>
-            <button id="layer-register" class="layer-submit" type="submit" disabled>장소 저장</button>
+            <button id="layer-register" class="layer-submit" type="submit" disabled>저장하기</button>
         </form>
     </section>
     <section id="layer-query" role="tabpanel" aria-labelledby="layer-query-tab" hidden>
@@ -71,20 +76,49 @@
         </form>
         <p id="layer-query-status" class="layer-hint" role="status">조건을 선택하고 조회하세요.</p>
     </section>
-    <section aria-label="표시한 장소 관리">
-        <h2 class="draw-list-title">내가 표시한 장소</h2>
-        <ul id="draw-layers" class="draw-layers" aria-label="내가 표시한 장소"></ul>
-        <section id="layer-details" hidden aria-label="선택한 장소">
+    <section id="layer-ranking" class="personal-ranking" role="tabpanel" aria-labelledby="layer-ranking-tab" hidden>
+            <h2 id="personal-ranking-heading" class="draw-list-title">내 장소로 여행지 찾기</h2>
+            <p class="layer-hint">조건 조회에 맞는 표시 항목을 기존 행정구역과 비교합니다. 적용한 조건이 없으면 전체 월·시간을 대상으로 합니다. 경계에 닿아도 포함하고, 같은 항목은 한 행정구에서 한 번만 셉니다.</p>
+            <label for="personal-ranking-order">추천 순서</label>
+            <select id="personal-ranking-order">
+                <option value="interest">관심 장소 많은 순 · 같으면 사건률 낮은 순</option>
+                <option value="safety">사건률 낮은 순 · 같으면 관심 장소 많은 순</option>
+            </select>
+            <button id="personal-ranking-run" class="layer-submit" type="button">여행지 순위 계산</button>
+            <button id="personal-ranking-example" class="layer-secondary" type="button">더미 데이터로 순위 예시 보기</button>
+            <p class="layer-hint">예시는 런던 장소·동선·구역 8개만 별도로 계산합니다. 내 항목과 섞거나 저장하지 않으며 월·시간 조회 조건도 적용하지 않습니다.</p>
+            <details id="personal-ranking-example-data" class="layer-more" hidden>
+                <summary>사용한 예시 데이터 보기</summary>
+                <ul id="personal-ranking-example-items"></ul>
+            </details>
+            <p id="personal-ranking-status" class="layer-hint" role="status" aria-live="polite">조건 조회 후 순위를 계산하세요. 서버에 저장하기 전에도 사용할 수 있습니다.</p>
+            <ol id="personal-ranking-results" class="personal-ranking-results" aria-label="개인 관심 여행지 순위"></ol>
+            <p class="layer-hint">관심 항목이 있는 지역만 표시합니다. 치안 지표는 기존 지도와 같은 2024년 연간 인구 1,000명당 사건률이며, 낮을수록 앞에 표시합니다. 안전을 보장하는 지표는 아닙니다.</p>
+    </section>
+    <section aria-label="장소·도형 관리">
+        <h2 class="draw-list-title">나만의 레이어에 등록한 항목</h2>
+        <ul id="draw-layers" class="draw-layers" aria-label="등록한 장소·도형"></ul>
+        <section id="layer-details" hidden aria-label="선택한 장소·도형">
             <h2 id="layer-details-title" class="draw-list-title"></h2>
             <p id="layer-details-meta" class="layer-hint"></p>
-            <img id="layer-details-photo" class="layer-image" alt="선택한 레이어 사진" hidden>
+            <img id="layer-details-photo" class="layer-image" alt="선택한 장소·도형 사진" hidden>
         </section>
         <form id="layer-edit-form" hidden>
-            <h2 class="draw-list-title">장소 정보 수정</h2>
-            <label for="edit-layer-name">장소 이름</label><input id="edit-layer-name" maxlength="100" required>
+            <h2 class="draw-list-title">장소·도형 정보 수정</h2>
+            <label for="edit-layer-name">이름</label><input id="edit-layer-name" maxlength="100" required>
             <div class="layer-fields">
                 <div><label for="edit-layer-month">월</label><select id="edit-layer-month" class="month-options"></select></div>
                 <div><label for="edit-layer-time">시간</label><input id="edit-layer-time" type="time" required></div>
+            </div>
+            <label for="edit-layer-color">표시 색상</label><input id="edit-layer-color" type="color" value="#3d6b4f">
+            <label for="edit-layer-shape">교체할 도형 종류</label>
+            <select id="edit-layer-shape">
+                <option value="marker">마커</option><option value="polyline">선</option><option value="polygon">다각형</option>
+                <option value="rectangle">사각형</option><option value="circle">원</option>
+            </select>
+            <div class="layer-row-actions">
+                <button id="edit-layer-redraw" class="layer-secondary" type="button">지도에서 다시 그리기</button>
+                <button id="edit-layer-finish" class="layer-secondary" type="button" disabled>그리기 완료</button>
             </div>
             <label for="edit-layer-photo">사진 교체</label><input id="edit-layer-photo" type="file" accept="image/jpeg,image/png,image/webp">
             <label class="layer-check"><input id="edit-remove-photo" type="checkbox"> 기존 사진 제거</label>
@@ -93,6 +127,9 @@
             <button id="layer-edit-cancel" class="layer-secondary" type="button">수정 취소</button>
         </form>
     </section>
+    <p class="layer-hint">새 항목은 ‘저장하기’로 등록합니다. 기존 항목의 수정·삭제·표시 여부는 ‘변경사항 저장’으로 반영합니다.</p>
+    <p class="layer-hint" th:if="${!layerDatabaseStorage}">저장본은 같은 브라우저 세션에서 복원되며, 서버 재시작이나 세션 만료 시 초기화됩니다.</p>
+    <p class="layer-hint" th:if="${layerDatabaseStorage}">DB에 저장합니다. 로그인 없이 저장한 항목은 같은 브라우저에서 복원됩니다.</p>
 </aside>
 </body>
 </html>
