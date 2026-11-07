@@ -42,7 +42,8 @@ class MapPageIntegrationTests {
         for (var resource : new String[] { "/js/custom-layer/panel.js", "/js/custom-layer/draw.js",
                 "/css/navigation.css", "/css/custom-layer/panel.css",
                 "/js/restaurant/restaurant.js", "/css/restaurant/panel.css",
-                "/js/accommodation/accommodation.js", "/css/accommodation/panel.css" }) {
+                "/js/accommodation/accommodation.js", "/css/accommodation/panel.css",
+                "/js/mobile.js", "/css/mobile.css" }) {
             assertTrue(html.contains(resource));
             assertEquals(200, get(resource).statusCode(), resource);
         }
