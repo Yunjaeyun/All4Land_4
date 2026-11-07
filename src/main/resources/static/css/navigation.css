@@ -28,7 +28,12 @@
 .app-header button { font-family: inherit; cursor: pointer; }
 .app-header button:focus-visible { outline: 2px solid #3d6b4f; outline-offset: -2px; }
 @media (max-width: 720px) {
-    :root { --app-header-height: 112px; }
-    .app-header { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 16px 0; }
-    .app-nav { flex: 1; gap: 22px; }
+    /* 모바일: 로고 + 가로 스크롤 메뉴를 한 줄에 */
+    :root { --app-header-height: 56px; }
+    .app-header { gap: 14px; padding: 0 0 0 12px; }
+    .app-logo { width: 32px; height: 32px; }
+    .app-brand-text { display: none; }
+    .app-nav { flex: 1; gap: 18px; padding-right: 16px; scrollbar-width: none; }
+    .app-nav::-webkit-scrollbar { display: none; }
+    .app-nav > button { font-size: 14px; }
 }

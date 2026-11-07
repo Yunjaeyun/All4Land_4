@@ -1,0 +1,363 @@
+<title>SafeStay London 시스템 구조</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: 한 열 문서. 위에서부터 런타임 구조 → 시작 순서 → 배포 → 메뉴별 대응표 → 주의점 */
+:root {
+  --bg: #f6f7f4;
+  --surface: #ffffff;
+  --fg: #1d2a22;
+  --muted: #5f6d64;
+  --line: #d3dad4;
+  --accent: #3d6b4f;        /* SafeStay 로고 녹색 */
+  --accent-soft: #e3ece5;
+  --warn: #9a5b12;
+  --warn-soft: #f6ead9;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131915; --surface: #1b231e; --fg: #e3eae5; --muted: #9aa89f; --line: #34413a;
+    --accent: #7fb393; --accent-soft: #23342a; --warn: #e0a85e; --warn-soft: #3a2c1a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131915; --surface: #1b231e; --fg: #e3eae5; --muted: #9aa89f; --line: #34413a;
+  --accent: #7fb393; --accent-soft: #23342a; --warn: #e0a85e; --warn-soft: #3a2c1a;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.65;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 1040px; margin: 0 auto; padding-block: 40px 64px; display: grid; gap: 48px; }
+header.page { display: grid; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--accent); text-transform: uppercase; }
+h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); line-height: 1.25; text-wrap: balance; }
+h2 { margin: 0; font-size: 20px; text-wrap: balance; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); }
+section { display: grid; gap: 16px; min-width: 0; }
+code, .mono { font-family: var(--font-mono); font-size: .88em; }
+code { background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+
+figure { margin: 0; display: grid; gap: 10px; min-width: 0; }
+.canvas { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.canvas svg { display: block; width: 100%; min-width: 760px; height: auto; color: var(--fg); }
+figcaption { color: var(--muted); font-size: 13px; max-width: 80ch; }
+
+svg text { font-family: var(--font-body); fill: currentColor; }
+svg .mono { font-family: var(--font-mono); }
+svg .muted { fill: var(--muted); }
+svg .accent { fill: var(--accent); }
+svg .box { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+svg .group { fill: var(--bg); stroke: var(--line); stroke-width: 1.5; }
+svg .row { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+svg .row.hot { stroke: var(--accent); stroke-width: 1.8; }
+svg .row.ghost { fill: none; stroke: var(--muted); stroke-dasharray: 5 4; }
+svg .edge { stroke: currentColor; stroke-width: 1.4; fill: none; }
+svg .edge.hot { stroke: var(--accent); stroke-width: 2; }
+svg .edge.boot { stroke: var(--warn); stroke-dasharray: 6 4; }
+svg .lbl { font-size: 11.5px; }
+svg .lbl.boot { fill: var(--warn); }
+svg .head { font-size: 15px; font-weight: 700; }
+svg .name { font-size: 13px; font-weight: 700; }
+svg .sub { font-size: 11px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 28px; height: 0; border-top: 2px solid var(--fg); display: inline-block; }
+.sw.hot { border-color: var(--accent); }
+.sw.boot { border-top: 2px dashed var(--warn); }
+.sw.ghost { border-top: 2px dashed var(--muted); }
+
+ol.boot { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: s -1; }
+ol.boot li { counter-increment: s; display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: start; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+ol.boot li::before { content: "@Order(" counter(s) ")"; grid-column: 1; font-family: var(--font-mono); font-size: 11px; color: var(--warn); line-height: 1.3; padding-top: 3px; }
+ol.boot li > div { min-width: 0; }
+ol.boot strong { display: block; font-family: var(--font-mono); font-size: 13.5px; }
+ol.boot p { color: var(--muted); font-size: 14px; }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 680px; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 500; letter-spacing: .03em; background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td .mono { display: block; }
+.pill { display: inline-block; font-size: 11.5px; padding: 1px 8px; border-radius: 99px; background: var(--warn-soft); color: var(--warn); white-space: nowrap; }
+
+ul.notes { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+ul.notes li { border-left: 3px solid var(--warn); padding: 4px 0 4px 14px; max-width: 80ch; }
+ul.notes b { font-weight: 700; }
+footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+
+<main>
+  <header class="page">
+    <div class="eyebrow">All4Land_4 · main @ 3571bbd · 2026-11-07</div>
+    <h1>SafeStay London 시스템 구조</h1>
+    <p class="lead">런던 LSOA 치안 주제도 위에 Airbnb 숙소와 사용자가 등록한 맛집을 보여주는 웹앱입니다. 화면은 Thymeleaf 한 페이지(<code>map.html</code>)에 메뉴별 패널을 끼워 넣는 구조이고, 백엔드는 Spring Boot, DB는 PostGIS입니다.</p>
+  </header>
+
+  <section aria-labelledby="runtime">
+    <h2 id="runtime">1. 요청이 흐르는 길</h2>
+    <div class="legend" aria-hidden="true">
+      <span><i class="sw"></i>사용자 요청 시</span>
+      <span><i class="sw hot"></i>공간 연산(PostGIS)</span>
+      <span><i class="sw boot"></i>앱 시작 시 1회</span>
+      <span><i class="sw ghost"></i>서버·DB를 쓰지 않음</span>
+    </div>
+    <figure>
+      <div class="canvas">
+        <svg viewBox="0 0 1000 580" role="img" aria-label="브라우저의 네 메뉴 중 숙소 찾기와 맛집 등록은 Spring Boot API를 거쳐 PostGIS 테이블을 읽고 쓰며, 안전한 동네는 정적 GeoJSON 파일을 받고, 나만의 장소 지도는 서버를 쓰지 않는다. 맛집과 숙소는 좌표로 safety_zones 구역에 연결된다.">
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="currentColor"/>
+            </marker>
+            <marker id="arr-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" style="fill: var(--accent)"/>
+            </marker>
+            <marker id="arr-boot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" style="fill: var(--warn)"/>
+            </marker>
+          </defs>
+
+          <!-- Google Maps -->
+          <rect class="box" x="20" y="16" width="280" height="58" rx="8"/>
+          <text class="name" x="36" y="40">Google Maps Platform</text>
+          <text class="sub muted" x="36" y="60">Maps JavaScript API · Street View</text>
+          <line class="edge" x1="160" y1="112" x2="160" y2="78" marker-end="url(#arr)"/>
+          <text class="lbl muted" x="170" y="99">지도 타일·로드뷰 (API 키)</text>
+
+          <!-- Browser -->
+          <rect class="group" x="20" y="116" width="280" height="448" rx="10"/>
+          <text class="head" x="36" y="142">브라우저</text>
+          <text class="sub muted mono" x="36" y="160">map.html + 메뉴별 JS</text>
+
+          <rect class="row" x="36" y="176" width="248" height="70" rx="6"/>
+          <text class="name" x="50" y="204">숙소 찾기</text>
+          <text class="sub muted mono" x="50" y="224">accommodation.js</text>
+
+          <rect class="row" x="36" y="262" width="248" height="70" rx="6"/>
+          <text class="name" x="50" y="290">안전한 동네</text>
+          <text class="sub muted mono" x="50" y="310">map.html 주제도 4종</text>
+
+          <rect class="row" x="36" y="348" width="248" height="70" rx="6"/>
+          <text class="name" x="50" y="376">맛집 등록</text>
+          <text class="sub muted mono" x="50" y="396">restaurant.js</text>
+
+          <rect class="row ghost" x="36" y="434" width="248" height="70" rx="6"/>
+          <text class="name" x="50" y="462">나만의 장소 지도</text>
+          <text class="sub muted mono" x="50" y="482">draw.js · 브라우저 메모리</text>
+
+          <!-- Backend -->
+          <rect class="group" x="380" y="116" width="300" height="448" rx="10"/>
+          <text class="head" x="396" y="142">Spring Boot 4 · Java 21</text>
+          <text class="sub muted mono" x="396" y="160">backend 컨테이너 :8080</text>
+
+          <rect class="row" x="396" y="176" width="268" height="70" rx="6"/>
+          <text class="name mono" x="410" y="204">AccommodationController</text>
+          <text class="sub muted mono" x="410" y="224">/api/accommodations/search …</text>
+
+          <rect class="row" x="396" y="262" width="268" height="70" rx="6"/>
+          <text class="name" x="410" y="290">정적 리소스</text>
+          <text class="sub muted mono" x="410" y="310">/data/london-lsoa-themes.json</text>
+
+          <rect class="row" x="396" y="348" width="268" height="70" rx="6"/>
+          <text class="name mono" x="410" y="376">RestaurantController</text>
+          <text class="sub muted mono" x="410" y="396">GET · POST · DELETE /api/restaurants</text>
+
+          <rect class="row" x="396" y="434" width="268" height="70" rx="6" style="stroke: var(--warn)"/>
+          <text class="name" x="410" y="462">시작 Runner 3개</text>
+          <text class="sub muted" x="410" y="482">스키마 보정 → 구역 → 숙소 적재</text>
+
+          <!-- Browser → Backend -->
+          <line class="edge" x1="284" y1="211" x2="394" y2="211" marker-end="url(#arr)"/>
+          <text class="lbl" x="339" y="203" text-anchor="middle">검색·필터</text>
+          <line class="edge" x1="284" y1="297" x2="394" y2="297" marker-end="url(#arr)"/>
+          <text class="lbl" x="339" y="289" text-anchor="middle">GeoJSON 5MB</text>
+          <line class="edge" x1="284" y1="383" x2="394" y2="383" marker-end="url(#arr)"/>
+          <text class="lbl" x="339" y="375" text-anchor="middle">등록·삭제</text>
+          <text class="lbl muted" x="339" y="473" text-anchor="middle">서버 호출 없음</text>
+
+          <!-- DB -->
+          <rect class="group" x="740" y="116" width="240" height="448" rx="10"/>
+          <text class="head" x="756" y="142">PostgreSQL 17 + PostGIS</text>
+          <text class="sub muted mono" x="756" y="160">db 컨테이너 · pgdata 볼륨</text>
+
+          <rect class="row" x="756" y="186" width="196" height="50" rx="6"/>
+          <text class="name mono" x="770" y="208">accommodations</text>
+          <text class="sub muted" x="770" y="226">Airbnb 숙소</text>
+
+          <rect class="row ghost" x="756" y="258" width="196" height="78" rx="6"/>
+          <text class="sub muted mono" x="770" y="280">users · green_spaces</text>
+          <text class="sub muted mono" x="770" y="298">user_custom_layers</text>
+          <text class="sub muted mono" x="770" y="316">custom_markers</text>
+          <text class="sub muted" x="770" y="331" style="font-size:10px">테이블만 있음 · 코드 미사용</text>
+
+          <rect class="row" x="756" y="358" width="196" height="50" rx="6"/>
+          <text class="name mono" x="770" y="380">restaurants</text>
+          <text class="sub muted" x="770" y="398">사용자 등록 맛집</text>
+
+          <rect class="row hot" x="756" y="444" width="196" height="50" rx="6"/>
+          <text class="name mono" x="770" y="466">safety_zones</text>
+          <text class="sub muted" x="770" y="484">LSOA 4,994개 · MultiPolygon</text>
+
+          <!-- FK spine -->
+          <polyline class="edge" points="952,211 968,211 968,469 954,469" marker-end="url(#arr)"/>
+          <line class="edge" x1="952" y1="383" x2="968" y2="383"/>
+          <text class="lbl muted" x="962" y="530" text-anchor="middle">safety_zone_id FK</text>
+          <line class="edge" x1="968" y1="469" x2="968" y2="516" style="stroke-dasharray:2 3"/>
+
+          <!-- Backend → DB (request time) -->
+          <line class="edge" x1="664" y1="211" x2="754" y2="211" marker-end="url(#arr)"/>
+          <text class="lbl" x="694" y="203" text-anchor="middle">JPA 조회</text>
+          <line class="edge" x1="664" y1="378" x2="754" y2="378" marker-end="url(#arr)"/>
+          <text class="lbl" x="692" y="370" text-anchor="middle">저장·삭제</text>
+          <path class="edge hot" d="M664 400 C 700 400, 716 462, 754 462" marker-end="url(#arr-hot)"/>
+          <text class="lbl accent" x="690" y="426" text-anchor="middle">ST_Covers</text>
+          <text class="lbl accent" x="690" y="440" text-anchor="middle">구역 매칭</text>
+
+          <!-- Backend → DB (boot) -->
+          <line class="edge boot" x1="664" y1="486" x2="754" y2="486" marker-end="url(#arr-boot)"/>
+          <text class="lbl boot" x="694" y="508" text-anchor="middle">초기 적재</text>
+          <path class="edge boot" d="M664 456 H 726 V 228 H 754" marker-end="url(#arr-boot)"/>
+          <text class="lbl boot" transform="translate(716 300) rotate(-90)" text-anchor="middle">숙소 적재</text>
+        </svg>
+      </div>
+      <figcaption>네 메뉴 중 DB까지 내려가는 것은 숙소 찾기와 맛집 등록 두 개입니다. 안전한 동네는 미리 만든 GeoJSON을 통째로 받아 브라우저에서 색칠하고, 나만의 장소 지도는 아직 저장 기능이 없어 새로고침하면 사라집니다. 맛집과 숙소는 저장할 때 좌표가 들어가는 LSOA를 PostGIS로 찾아 치안 등급과 연결합니다.</figcaption>
+    </figure>
+  </section>
+
+  <section aria-labelledby="boot">
+    <h2 id="boot">2. 앱이 켜질 때 일어나는 일</h2>
+    <p>DB 프로필로 실행하면 서버가 요청을 받기 시작한 뒤 아래 세 Runner가 순서대로 돕니다. 이미 처리된 DB에서는 각 단계가 아무것도 하지 않고 넘어갑니다.</p>
+    <ol class="boot">
+      <li><div><strong>SchemaPatchRunner</strong><p><code>ddl-auto: update</code>가 바꾸지 못하는 기존 컬럼을 맞춥니다. <code>safety_zones.geometry</code>를 MultiPolygon으로, <code>restaurants.user_id</code>를 nullable로.</p></div></li>
+      <li><div><strong>SafetyZoneDataLoader</strong><p><code>safety_zones</code>가 비어 있으면 <code>london-lsoa-themes.json</code>에서 LSOA 4,994개를 넣고 GIST 공간 인덱스를 만듭니다.</p></div></li>
+      <li><div><strong>AccommodationDataLoader</strong><p><code>accommodations</code>가 비어 있으면 <code>london-airbnb-listings.json</code>을 넣으면서 좌표로 구역을 찾아 <code>safety_zone_id</code>를 채우고, 자치구·방 유형으로 숙소 이름을 만듭니다.</p></div></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="deploy">
+    <h2 id="deploy">3. 배포 경로</h2>
+    <figure>
+      <div class="canvas">
+        <svg viewBox="0 0 1000 290" role="img" aria-label="main 브랜치에 push되면 GitHub Actions가 Docker 이미지를 빌드해 GHCR에 올리고, SSH로 GCP e2-micro VM에 접속해 이미지를 받아 docker compose로 backend를 재기동한다. 사용자는 VM의 80번 포트로 접속하고 DB는 외부에 열려 있지 않다.">
+          <defs>
+            <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="currentColor"/>
+            </marker>
+          </defs>
+
+          <rect class="box" x="20" y="40" width="170" height="80" rx="8"/>
+          <text class="name" x="36" y="70">개발자</text>
+          <text class="sub muted mono" x="36" y="92">PR 머지 → main</text>
+          <text class="sub muted" x="36" y="108">push 즉시 배포 시작</text>
+
+          <line class="edge" x1="190" y1="80" x2="246" y2="80" marker-end="url(#arr2)"/>
+          <text class="lbl" x="218" y="72" text-anchor="middle">push</text>
+
+          <rect class="box" x="250" y="40" width="200" height="80" rx="8"/>
+          <text class="name" x="266" y="70">GitHub Actions</text>
+          <text class="sub muted mono" x="266" y="92">deploy.yml</text>
+          <text class="sub muted" x="266" y="108">Dockerfile로 이미지 빌드</text>
+
+          <line class="edge" x1="450" y1="80" x2="506" y2="80" marker-end="url(#arr2)"/>
+          <text class="lbl" x="478" y="72" text-anchor="middle">이미지</text>
+
+          <rect class="box" x="510" y="40" width="190" height="80" rx="8"/>
+          <text class="name" x="526" y="70">GHCR</text>
+          <text class="sub muted mono" x="526" y="92">all4land_4:&lt;커밋 sha&gt;</text>
+          <text class="sub muted mono" x="526" y="108">all4land_4:latest</text>
+
+          <line class="edge" x1="700" y1="80" x2="756" y2="80" marker-end="url(#arr2)"/>
+          <text class="lbl" x="728" y="72" text-anchor="middle">pull</text>
+
+          <rect class="group" x="760" y="16" width="220" height="258" rx="10"/>
+          <text class="head" x="776" y="42">GCP e2-micro VM</text>
+          <text class="sub muted" x="776" y="60">RAM 1GB · us-central1</text>
+          <rect class="row" x="776" y="74" width="188" height="62" rx="6"/>
+          <text class="name" x="790" y="98">backend</text>
+          <text class="sub muted mono" x="790" y="118">80 → 8080 · mem 512m</text>
+          <rect class="row hot" x="776" y="176" width="188" height="62" rx="6"/>
+          <text class="name" x="790" y="200">db (PostGIS)</text>
+          <text class="sub muted mono" x="790" y="220">127.0.0.1:5433만 열림</text>
+          <line class="edge" x1="870" y1="136" x2="870" y2="174" marker-end="url(#arr2)"/>
+          <text class="lbl" x="880" y="160">JDBC</text>
+
+          <text class="lbl muted" x="456" y="176" text-anchor="middle">GitHub Actions가 SSH로 접속해 실행:</text>
+          <text class="lbl muted mono" x="456" y="194" text-anchor="middle">git pull → compose pull backend → up -d</text>
+          <path class="edge" d="M450 120 C 450 150, 600 150, 600 150 L 772 150" style="stroke-dasharray:4 4" marker-end="url(#arr2)"/>
+
+          <rect class="box" x="510" y="208" width="190" height="56" rx="8"/>
+          <text class="name" x="526" y="232">사용자 브라우저</text>
+          <text class="sub muted mono" x="526" y="250">http://&lt;외부 IP&gt;</text>
+          <path class="edge" d="M700 236 C 740 236, 740 110, 774 110" marker-end="url(#arr2)"/>
+          <text class="lbl" x="742" y="200" text-anchor="middle">:80</text>
+        </svg>
+      </div>
+      <figcaption>main에 들어간 커밋은 테스트 단계 없이 바로 VM에 배포됩니다. VM은 이미지를 빌드하지 않고 받아서 실행만 합니다. DB는 VM 안에서만 접근할 수 있어서, DB 작업은 VM에 SSH로 들어가 <code>docker compose exec db</code>로 합니다.</figcaption>
+    </figure>
+  </section>
+
+  <section aria-labelledby="map">
+    <h2 id="map">4. 메뉴별 대응표</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>상단 메뉴</th><th>화면 파일</th><th>호출하는 API</th><th>DB 테이블</th><th>유스케이스</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>숙소 찾기</td>
+            <td><span class="mono">accommodation/panel.html</span><span class="mono">accommodation.js</span></td>
+            <td><span class="mono">GET /api/accommodations/search</span><span class="mono">GET …/boroughs</span></td>
+            <td><span class="mono">accommodations</span><span class="mono">safety_zones</span></td>
+            <td>UC-02 숙소 검색·필터·Top N</td>
+          </tr>
+          <tr>
+            <td>안전한 동네</td>
+            <td><span class="mono">map.html</span></td>
+            <td><span class="mono">GET /data/london-lsoa-themes.json</span><span class="mono">GET …/borough-counts</span></td>
+            <td>(정적 파일)</td>
+            <td>UC-01 지도 정보 조회</td>
+          </tr>
+          <tr>
+            <td>맛집 등록</td>
+            <td><span class="mono">restaurant/panel.html</span><span class="mono">restaurant.js</span></td>
+            <td><span class="mono">GET · POST /api/restaurants</span><span class="mono">DELETE /api/restaurants/{id}</span></td>
+            <td><span class="mono">restaurants</span><span class="mono">safety_zones</span></td>
+            <td>UC-03 맛집 추가·삭제</td>
+          </tr>
+          <tr>
+            <td>나만의 장소 지도</td>
+            <td><span class="mono">custom-layer/panel.html</span><span class="mono">panel.js · draw.js</span></td>
+            <td>없음</td>
+            <td><span class="pill">미연결</span></td>
+            <td>UC-04 사용자 지정 레이어</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="notes">
+    <h2 id="notes">5. 구조상 알아둘 점</h2>
+    <ul class="notes">
+      <li><b>나만의 장소 지도는 저장되지 않습니다.</b> <code>user_custom_layers</code>, <code>custom_markers</code> 테이블은 있지만 API가 없어서 그린 내용은 새로고침하면 사라집니다.</li>
+      <li><b>로그인이 없습니다.</b> <code>users</code> 테이블은 비어 있고, 맛집은 등록자 없이(<code>user_id</code> null) 저장됩니다.</li>
+      <li><b>스키마 변경은 자동으로 반영되지 않습니다.</b> <code>ddl-auto: update</code>는 컬럼 추가만 합니다. 기존 컬럼의 타입이나 NOT NULL을 바꾸면 <code>SchemaPatchRunner</code>에 보정을 추가해야 합니다. 2026-10-24 배포 장애의 원인이었습니다.</li>
+      <li><b>DB 없이도 화면은 뜹니다.</b> <code>run.sh</code>는 <code>map-only</code> 프로필로 실행되어 DB 관련 Bean이 빠집니다. 이때 숙소 찾기와 맛집 등록은 동작하지 않습니다.</li>
+      <li><b>첫 기동 직후 잠깐은 등록이 실패할 수 있습니다.</b> 서버가 요청을 받기 시작한 뒤 적재가 진행되므로, 그 사이에 맛집을 등록하면 "구역 밖" 오류가 납니다.</li>
+    </ul>
+  </section>
+
+  <footer>All4Land_4 저장소 main 브랜치 기준으로 작성했습니다. 데이터 출처: GLA LSOA 2021 경계, data.police.uk, ONS 인구, OS Open Greenspace, Kaggle Airbnb.</footer>
+</main>
