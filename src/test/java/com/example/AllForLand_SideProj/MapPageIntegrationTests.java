@@ -40,7 +40,7 @@ class MapPageIntegrationTests {
             assertTrue(html.contains(expected), expected);
         }
         for (var resource : new String[] { "/js/custom-layer/panel.js", "/js/custom-layer/draw.js",
-                "/js/custom-layer/storage.js",
+                "/js/custom-layer/storage.js", "/js/custom-layer/ranking.js",
                 "/css/navigation.css", "/css/custom-layer/panel.css",
                 "/js/restaurant/restaurant.js", "/css/restaurant/panel.css",
                 "/js/accommodation/accommodation.js", "/css/accommodation/panel.css" }) {

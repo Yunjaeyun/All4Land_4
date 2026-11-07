@@ -1,0 +1,20 @@
+{
+  "features": [
+    {"id": 1, "name": "예시 · 버킹엄 궁전", "month": 9, "time": "10:00", "visible": true, "photo": null,
+      "shape": {"type": "marker", "color": "#247b65", "position": {"lat": 51.5014, "lng": -0.1419}}},
+    {"id": 2, "name": "예시 · 내셔널 갤러리", "month": 9, "time": "14:00", "visible": true, "photo": null,
+      "shape": {"type": "marker", "color": "#247b65", "position": {"lat": 51.5089, "lng": -0.1283}}},
+    {"id": 3, "name": "예시 · 대영박물관", "month": 9, "time": "15:00", "visible": true, "photo": null,
+      "shape": {"type": "marker", "color": "#247b65", "position": {"lat": 51.5194, "lng": -0.1270}}},
+    {"id": 4, "name": "예시 · 그리니치 천문대", "month": 10, "time": "11:00", "visible": true, "photo": null,
+      "shape": {"type": "marker", "color": "#247b65", "position": {"lat": 51.4769, "lng": -0.0005}}},
+    {"id": 5, "name": "예시 · 템스강 양안 산책 동선", "month": 9, "time": "18:00", "visible": true, "photo": null,
+      "shape": {"type": "polyline", "color": "#376fa3", "path": [{"lat": 51.5007, "lng": -0.1246}, {"lat": 51.5033, "lng": -0.1195}, {"lat": 51.5076, "lng": -0.1000}]}},
+    {"id": 6, "name": "예시 · 하이드파크 주변 800m", "month": 9, "time": "17:00", "visible": true, "photo": null,
+      "shape": {"type": "circle", "color": "#a36c37", "position": {"lat": 51.5075, "lng": -0.1700}, "radius": 800}},
+    {"id": 7, "name": "예시 · 소호 산책 구역", "month": 9, "time": "19:00", "visible": true, "photo": null,
+      "shape": {"type": "polygon", "color": "#8a559e", "path": [{"lat": 51.5115, "lng": -0.1410}, {"lat": 51.5160, "lng": -0.1410}, {"lat": 51.5160, "lng": -0.1300}, {"lat": 51.5115, "lng": -0.1300}]}},
+    {"id": 8, "name": "예시 · 사우스뱅크 관심 구역", "month": 10, "time": "18:00", "visible": true, "photo": null,
+      "shape": {"type": "rectangle", "color": "#a34c55", "bounds": {"north": 51.5070, "south": 51.5010, "east": -0.1080, "west": -0.1200}}}
+  ]
+}

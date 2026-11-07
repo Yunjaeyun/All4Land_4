@@ -11,6 +11,7 @@ function workspace() {
         querySelectorAll() { return []; }, addEventListener() {}, createElement: element };
     document.getElementById('draw-color').value = '#247b65';
     document.getElementById('layer-query').hidden = true;
+    document.getElementById('layer-ranking').hidden = true;
     class Overlay {
         constructor(options) { this.options = options; }
         setMap(map) { this.options.map = map; }
@@ -24,6 +25,8 @@ function workspace() {
     }
     const listeners = {};
     const map = { options: {}, get() { return false; }, addListener(name, callback) { listeners[name] = callback; },
+        fitBounds(bounds) { this.bounds = bounds; },
+        panTo(position) { this.position = position; },
         setOptions(options) { Object.assign(this.options, options); } };
     const revoked = [];
     let urlId = 0;
@@ -32,6 +35,7 @@ function workspace() {
         CustomEvent: class { constructor(name, options) { this.type = name; this.detail = options?.detail; } },
         URL: { createObjectURL() { return `blob:test-${++urlId}`; }, revokeObjectURL(url) { revoked.push(url); } },
         google: { maps: { Marker: Overlay, Polygon: Overlay, Polyline: Overlay, Rectangle: Overlay, Circle: Overlay,
+            LatLngBounds: class { points = []; areas = []; extend(point) { this.points.push(point); } union(area) { this.areas.push(area); } },
             SymbolPath: { CIRCLE: 'circle' }, event: { clearInstanceListeners() {} } } } };
     vm.createContext(context);
     for (const file of ['draw.js', 'storage.js']) vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/js/custom-layer', file), 'utf8'), context);

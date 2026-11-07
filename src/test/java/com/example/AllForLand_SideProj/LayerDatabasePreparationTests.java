@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.server.ResponseStatusException;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -37,11 +38,16 @@ class LayerDatabasePreparationTests {
         var resolver = new DatabaseLayerWorkspaceResolver(jdbc, environment);
         var request = new MockHttpServletRequest();
         request.setParameter("userId", "7");
-        assertThrows(ResponseStatusException.class, () -> resolver.resolve(request));
+        var response = new MockHttpServletResponse();
+        var key = resolver.resolve(request, response);
+        assertTrue(response.getHeader("Set-Cookie").contains("custom-layer-workspace=" + key));
+        request.setCookies(new jakarta.servlet.http.Cookie("custom-layer-workspace", key));
+        assertEquals(key, resolver.resolve(request, new MockHttpServletResponse()));
+        assertNotEquals(key, resolver.resolve(new MockHttpServletRequest(), new MockHttpServletResponse()));
         verifyNoInteractions(jdbc);
         request.setUserPrincipal(() -> "member");
         when(jdbc.queryForList("SELECT user_id FROM users WHERE login_id = ?", Long.class, "member")).thenReturn(List.of(12L));
-        assertEquals("12", resolver.resolve(request));
+        assertEquals("12", resolver.resolve(request, response));
     }
     @Test
     void localDevelopmentUserIsNeverUsedInProduction() {
@@ -50,8 +56,8 @@ class LayerDatabasePreparationTests {
         environment.setActiveProfiles("layer-db", "layer-db-dev");
         when(jdbc.queryForList("SELECT user_id FROM users WHERE user_id = ?", Long.class, 7L)).thenReturn(List.of(7L));
         var resolver = new DatabaseLayerWorkspaceResolver(jdbc, environment);
-        assertEquals("7", resolver.resolve(new MockHttpServletRequest()));
+        assertEquals("7", resolver.resolve(new MockHttpServletRequest(), new MockHttpServletResponse()));
         environment.setActiveProfiles("layer-db", "layer-db-dev", "prod");
-        assertThrows(ResponseStatusException.class, () -> resolver.resolve(new MockHttpServletRequest()));
+        assertNotEquals("7", resolver.resolve(new MockHttpServletRequest(), new MockHttpServletResponse()));
     }
 }

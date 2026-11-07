@@ -21,14 +21,22 @@ public class DatabaseLayerRepository implements LayerRepository {
     private final LayerGeometryMapper geometry = new LayerGeometryMapper();
     public DatabaseLayerRepository(NamedParameterJdbcTemplate jdbc) { this.jdbc = jdbc; }
 
+    private record Owner(String column, Object key) {
+        static Owner from(String workspace) {
+            return workspace.length() == 36 ? new Owner("anonymous_key", workspace)
+                    : new Owner("user_id", Long.parseLong(workspace));
+        }
+    }
+
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public LayerDocument findAll(String workspace) {
+        var owner = Owner.from(workspace);
         var features = jdbc.query("""
             SELECT f.client_feature_id, f.title, f.visit_month, f.visit_time, f.is_visible, f.photo_data,
                 f.shape_type, f.color, ST_AsText(f.geometry) AS wkt, f.radius_m
             FROM user_custom_layers l JOIN custom_layer_features f ON f.custom_layer_id = l.custom_layer_id
-            WHERE l.user_id = :owner AND l.is_personal = TRUE ORDER BY f.display_order
-            """, Map.of("owner", Long.parseLong(workspace)), (row, index) -> new Feature(
+            WHERE l.%s = :owner AND l.is_personal = TRUE ORDER BY f.display_order
+            """.formatted(owner.column()), Map.of("owner", owner.key()), (row, index) -> new Feature(
                 row.getLong("client_feature_id"), row.getString("title"), row.getInt("visit_month"),
                 row.getTime("visit_time").toLocalTime().toString(), row.getBoolean("is_visible"), row.getString("photo_data"),
                 geometry.fromWkt(row.getString("shape_type"), row.getString("color"), row.getString("wkt"), row.getObject("radius_m", Double.class))));
@@ -37,14 +45,13 @@ public class DatabaseLayerRepository implements LayerRepository {
 
     @Transactional
     public void replaceAll(String workspace, LayerDocument document) {
-        long owner = Long.parseLong(workspace);
-        jdbc.queryForObject("SELECT user_id FROM users WHERE user_id = :owner FOR UPDATE", Map.of("owner", owner), Long.class);
+        var owner = Owner.from(workspace);
         Long layer = jdbc.queryForObject("""
-            INSERT INTO user_custom_layers (user_id, layer_name, is_public, is_personal, created_at, updated_at)
+            INSERT INTO user_custom_layers (%1$s, layer_name, is_public, is_personal, created_at, updated_at)
             VALUES (:owner, '나만의 장소 지도', false, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            ON CONFLICT (user_id) WHERE is_personal = TRUE DO UPDATE SET updated_at = CURRENT_TIMESTAMP
+            ON CONFLICT (%1$s) WHERE is_personal = TRUE DO UPDATE SET updated_at = CURRENT_TIMESTAMP
             RETURNING custom_layer_id
-            """, Map.of("owner", owner), Long.class);
+            """.formatted(owner.column()), Map.of("owner", owner.key()), Long.class);
         jdbc.update("DELETE FROM custom_layer_features WHERE custom_layer_id = :layer", Map.of("layer", layer));
         int order = 0;
         for (var item : document.features()) {

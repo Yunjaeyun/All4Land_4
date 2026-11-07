@@ -74,6 +74,13 @@ class LayerPostgisRepositoryTests {
                 assertTrue(repository.findAll("1").features().isEmpty());
                 assertEquals(layer, repository.findAll("2"));
                 assertEquals(5, jdbc.queryForObject("SELECT count(*) FROM custom_layer_features", Integer.class));
+                String guest = UUID.randomUUID().toString();
+                transaction.executeWithoutResult(status -> repository.replaceAll(guest, layer));
+                transaction.executeWithoutResult(status -> repository.replaceAll(guest, edited));
+                assertEquals(edited, repository.findAll(guest));
+                assertTrue(repository.findAll(UUID.randomUUID().toString()).features().isEmpty());
+                assertEquals(layer, repository.findAll("2"));
+                assertEquals(1, jdbc.queryForObject("SELECT count(*) FROM user_custom_layers WHERE user_id IS NULL AND is_personal", Integer.class));
             } finally { admin.execute("DROP SCHEMA " + schema + " CASCADE"); }
         }
     }

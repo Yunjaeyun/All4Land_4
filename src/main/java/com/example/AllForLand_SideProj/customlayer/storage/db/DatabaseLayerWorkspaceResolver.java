@@ -2,17 +2,22 @@ package com.example.AllForLand_SideProj.customlayer.storage.db;
 
 import com.example.AllForLand_SideProj.customlayer.storage.LayerWorkspaceResolver;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.time.Duration;
+import java.util.UUID;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.web.server.ResponseStatusException;
 
 @Component
 @Profile("layer-db")
 public class DatabaseLayerWorkspaceResolver implements LayerWorkspaceResolver {
+    private static final String COOKIE = "custom-layer-workspace";
     private final JdbcTemplate jdbc;
     private final Environment environment;
 
@@ -20,7 +25,7 @@ public class DatabaseLayerWorkspaceResolver implements LayerWorkspaceResolver {
         this.jdbc = jdbc;
         this.environment = environment;
     }
-    public String resolve(HttpServletRequest request) {
+    public String resolve(HttpServletRequest request, HttpServletResponse response) {
         var principal = request.getUserPrincipal();
         if (principal != null) {
             var ids = jdbc.queryForList("SELECT user_id FROM users WHERE login_id = ?", Long.class, principal.getName());
@@ -33,6 +38,18 @@ public class DatabaseLayerWorkspaceResolver implements LayerWorkspaceResolver {
             if (id != null && !jdbc.queryForList("SELECT user_id FROM users WHERE user_id = ?", Long.class, id).isEmpty())
                 return id.toString();
         }
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "레이어 저장·조회에는 로그인이 필요합니다.");
+        var cookies = request.getCookies();
+        if (cookies != null) {
+            for (var cookie : cookies) {
+                if (COOKIE.equals(cookie.getName()) && cookie.getValue().matches("[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}")) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        String key = UUID.randomUUID().toString();
+        response.addHeader("Set-Cookie", ResponseCookie.from(COOKIE, key).httpOnly(true)
+                .secure(request.isSecure()).sameSite("Strict").path("/api/custom-layers")
+                .maxAge(Duration.ofDays(365)).build().toString());
+        return key;
     }
 }

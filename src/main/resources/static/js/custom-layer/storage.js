@@ -6,17 +6,14 @@ window.CustomLayerStorage = class {
         this.busy = false;
         this.status = document.getElementById("layer-storage-status");
         this.saveButton = document.getElementById("layer-server-save");
-        this.loadButton = document.getElementById("layer-server-load");
         this.saveButton.addEventListener("click", () => this.save());
-        this.loadButton.addEventListener("click", () => {
-            if (window.confirm("저장하지 않은 등록·수정 내용을 저장본으로 바꿀까요?")) this.load();
-        });
+        this.draw.persistRegistration = item => this.save(item);
         this.load();
     }
     setBusy(busy) {
         this.busy = busy;
         this.saveButton.disabled = busy || !this.loaded;
-        this.loadButton.disabled = busy;
+        document.getElementById("layer-register").disabled = busy || !this.loaded;
         // Avoid editing a registered geometry while a snapshot is being saved/restored.
         document.getElementById("layer-add-form").inert = busy;
         document.getElementById("layer-edit-form").inert = busy;
@@ -55,26 +52,30 @@ window.CustomLayerStorage = class {
         else shape.path = item.overlay.getPath().getArray().map((point) => point.toJSON());
         return shape;
     }
-    async snapshot() {
-        return { features: await Promise.all(this.draw.items.filter((item) => item.registered).map(async (item) => ({
+    async snapshot(pending) {
+        const items = this.draw.items.filter(item => item.registered);
+        if (pending) items.push(pending);
+        return { features: await Promise.all(items.map(async (item) => ({
             id: item.id, name: item.name, month: item.month, time: item.time,
             visible: item.visible, photo: await this.photoData(item.photoUrl), shape: this.shape(item)
         }))) };
     }
-    async save() {
-        if (this.busy || !this.loaded) return;
-        if (this.draw.vertices.length || this.draw.items.some((item) => !item.registered)) {
+    async save(pending) {
+        if (this.busy || !this.loaded) return false;
+        if (!pending && (this.draw.vertices.length || this.draw.items.some((item) => !item.registered))) {
             this.status.textContent = "그리기를 완료하고 대기 도형에 이름·월·시간을 지정해 등록한 뒤 저장하세요.";
             return;
         }
         this.setBusy(true);
         this.status.textContent = "레이어를 서버에 저장하는 중…";
         try {
-            const document = await this.request("PUT", await this.snapshot());
-            const location = window.document.body.dataset.layerStorage === "database" ? "DB에 저장되어 같은 사용자로 복원됩니다." : "서버 메모리에 저장되어 같은 브라우저 세션에서 복원됩니다.";
+            const document = await this.request("PUT", await this.snapshot(pending));
+            const location = window.document.body.dataset.layerStorage === "database" ? "DB에 저장되었습니다. 로그인 없이 저장한 항목은 같은 브라우저에서 복원됩니다." : "서버 메모리에 저장되어 같은 브라우저 세션에서 복원됩니다.";
             this.status.textContent = `나만의 레이어에 항목 ${document.features.length}개 저장 완료. ${location}`;
+            return true;
         } catch (error) {
             this.status.textContent = `${error.message} 현재 화면의 내용은 유지됩니다.`;
+            return false;
         } finally { this.setBusy(false); }
     }
     restore(document) {
@@ -109,9 +110,9 @@ window.CustomLayerStorage = class {
             const document = await this.request("GET");
             this.restore(document);
             this.loaded = true;
-            this.status.textContent = `나만의 레이어에서 항목 ${document.features.length}개를 불러왔습니다. 변경 후에는 ‘서버 저장’을 누르세요.`;
+            this.status.textContent = `나만의 레이어에서 항목 ${document.features.length}개를 불러왔습니다. 기존 항목을 수정한 뒤에는 ‘변경사항 저장’을 누르세요.`;
         } catch (error) {
-            this.status.textContent = `${error.message} ‘저장본 불러오기’로 다시 시도하세요.`;
+            this.status.textContent = `${error.message} 페이지를 새로고침해 다시 시도하세요.`;
         } finally { this.setBusy(false); }
     }
 };

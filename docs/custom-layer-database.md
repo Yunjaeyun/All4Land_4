@@ -7,12 +7,13 @@ SQL은 자동 적용하지 않는다. DB 모드는 `map-only`와 함께 사용�
 
 ## ERD Cloud 반영 사항
 
-기존 `users → user_custom_layers → custom_markers`와 기존 컬럼은 보존한다.
-신규 편집기는 `users → 개인 user_custom_layers 1개 → custom_layer_features 여러 개`를 사용한다.
+기존 레이어와 마커 데이터는 보존한다. 미로그인 상태에서는 `user_id`를 NULL로 저장하고 브라우저 쿠키의 임의 키로 개인 레이어를 찾는다.
+쿠키를 삭제하거나 다른 브라우저를 사용하면 기존 익명 레이어를 자동으로 복원할 수 없다.
 
 | 테이블 | 추가 항목 | 의미 |
 |---|---|---|
 | user_custom_layers | is_personal BOOLEAN | 개인 레이어 여부. TRUE인 행은 사용자별로 하나만 허용 |
+| user_custom_layers | anonymous_key VARCHAR(36) | 로그인 없이 저장할 때 사용하는 브라우저별 키 |
 | custom_layer_features | feature_id BIGINT PK | 도형 DB ID |
 | custom_layer_features | custom_layer_id BIGINT FK | 소속 개인 레이어 |
 | custom_layer_features | client_feature_id BIGINT | 화면 항목 ID. 레이어 안에서 유일 |
@@ -27,7 +28,7 @@ SQL은 자동 적용하지 않는다. DB 모드는 `map-only`와 함께 사용�
 
 사용자별 개인 레이어 부분 유일 인덱스, 항목 ID 유일 인덱스, 월·시간 인덱스, 공간 GiST 인덱스를 사용한다.
 WGS84는 경도(X), 위도(Y) 순서다. 전체 저장은 개인 레이어의 항목만 원자적으로 교체한다.
-사용자 행 잠금으로 동시 쓰기를 직렬화하고 실패 시 전체 롤백한다. 같은 계정의 여러 탭에서는 마지막 저장이 우선한다.
+개인 레이어 행 갱신으로 같은 레이어에 대한 쓰기를 직렬화하고 실패 시 전체 롤백한다. 여러 탭에서는 마지막 저장이 우선한다.
 항목 내부 DB PK는 전체 저장 때 바뀔 수 있으며 외부 참조에는 client_feature_id를 사용한다.
 
 ## 적용 순서
@@ -35,12 +36,12 @@ WGS84는 경도(X), 위도(Y) 순서다. 전체 저장은 개인 레이어의 �
 1. DB 담당자와 확장 합의 후 ERD Cloud에 반영한다.
 2. 기존 ERD 테이블이 있는 개발 DB에서 `docs/sql/custom-layer-storage.sql`을 수동 적용한다.
 3. `layer-db` 프로필을 활성화한다. 이 모드는 `ddl-auto: validate`이므로 스키마를 자동 변경하지 않는다.
-4. 인증된 `HttpServletRequest.getUserPrincipal().getName()`을 `users.login_id`와 연결한다.
-   미로그인은 401, 사용자 행이 없으면 403이며 요청의 userId는 신뢰하지 않는다.
+4. 로그인 없이 화면을 열면 서버가 브라우저에 익명 키를 발급한다. 로그인 정보가 있으면 기존대로 `users.login_id`에 연결한다.
 5. 서로 다른 월·시간의 항목을 저장하고 조건 조회·새로고침·서버 재시작 복원을 확인한다.
 
-로그인 전 로컬 확인은 `layer-db,layer-db-dev`와 개인 설정의
-`custom-layer.development-user-id` 또는 `CUSTOM_LAYER_DEV_USER_ID`로 기존 테스트 사용자 PK를 지정한다.
+계정과 연결된 저장을 로컬에서 확인하려면 Docker DB의 `users`에 `test1` 같은 테스트 계정을 만들고,
+`layer-db,layer-db-dev`와 개인 설정의 `custom-layer.development-user-id` 또는 `CUSTOM_LAYER_DEV_USER_ID`에
+해당 계정의 숫자 `user_id`를 지정한다. 이 설정은 저장할 사용자만 선택하며 로그인 세션을 만들지 않는다.
 사용자 자동 생성은 하지 않는다. `prod` 활성화 시 개발용 사용자 설정은 무시한다.
 세션 만료는 DB의 개인 레이어나 항목을 삭제하지 않는다.
 
@@ -51,4 +52,5 @@ WGS84는 경도(X), 위도(Y) 순서다. 전체 저장은 개인 레이어의 �
 기존 다중 레이어 행은 is_personal=FALSE로 남아 새 편집기에서 반환되지 않는다.
 실제 사용 데이터가 있다면 DB 담당자와 별도 변환 후 사용한다. 자동 삭제·데이터 이동은 하지 않는다.
 사진은 현재 Data URL 방식이며 파일 저장소/업로드와 로그인 전체 구현은 후속 작업이다.
-행정구역별 집계·순위는 아직 구현하지 않았다. 이후 개인 레이어의 항목별 공간 교차를 집계할 수 있다.
+행정구역별 집계·순위는 지도와 같은 GeoJSON으로 계산하며 DB 연결 없이 사용할 수 있다.
+기존 LSOA 경계로 교차를 판정하고 기존 borough 구분으로 묶는다. 자세한 기준은 `custom-layer-ranking.md` 참고.

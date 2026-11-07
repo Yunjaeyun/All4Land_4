@@ -7,6 +7,8 @@ window.CustomLayerDraw = class {
         this.items = [];
         this.filter = null;
         this.editingItemId = null;
+        this.replacementDrawing = false;
+        this.replacement = null;
         this.vertices = [];
         this.preview = null;
         this.selected = null;
@@ -35,7 +37,7 @@ window.CustomLayerDraw = class {
         map.addListener("dblclick", (event) => this.doubleClick(event));
         map.addListener("mousemove", (event) => this.move(event.latLng));
         window.addEventListener("custom-layer:position", (event) => {
-            if (!this.active()) return;
+            if (!this.active() || this.replacementDrawing) return;
             if (this.vertices.length) {
                 this.message.textContent = "그리기를 완료하거나 취소한 뒤 좌표에 마커를 추가하세요.";
                 return;
@@ -43,8 +45,12 @@ window.CustomLayerDraw = class {
             this.setMode("marker");
             this.add("marker", event.detail);
         });
-        window.addEventListener("app:menu", () => this.syncActive());
-        window.addEventListener("custom-layer:tab", () => this.syncActive());
+        const switchPanel = () => {
+            if (this.replacementDrawing || this.replacement) this.closeEdit();
+            this.syncActive();
+        };
+        window.addEventListener("app:menu", switchPanel);
+        window.addEventListener("custom-layer:tab", switchPanel);
         document.addEventListener("keydown", (event) => {
             if (!this.active() || event.target.closest("input, select, textarea")) return;
             if (event.key === "Escape") this.setMode("select");
@@ -74,12 +80,18 @@ window.CustomLayerDraw = class {
             this.saveEdit();
         });
         document.getElementById("layer-edit-cancel").addEventListener("click", () => this.closeEdit());
+        document.getElementById("edit-layer-redraw").addEventListener("click", () => this.startReplacement());
+        document.getElementById("edit-layer-finish").addEventListener("click", () => this.finish());
+        document.getElementById("edit-layer-color").addEventListener("input", event => {
+            if (this.replacement) this.replacement.overlay.setOptions(this.style(this.replacement.type, event.target.value));
+        });
         this.setMode("select");
         this.refresh();
     }
 
     active() {
-        return !this.storageBusy && document.body.dataset.activeMenu === "custom-layer" && !document.getElementById("layer-add").hidden;
+        return !this.storageBusy && document.body.dataset.activeMenu === "custom-layer"
+            && (this.replacementDrawing || !document.getElementById("layer-add").hidden);
     }
     color() { return document.getElementById("draw-color").value; }
     style(type, color) {
@@ -87,8 +99,8 @@ window.CustomLayerDraw = class {
             fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2 } }
             : { strokeColor: color, strokeWeight: 3, fillColor: color, fillOpacity: 0.25 };
     }
-    make(type, geometry, color) {
-        const options = { ...this.style(type, color), map: this.map, zIndex: 100 };
+    make(type, geometry, color, overrides = {}) {
+        const options = { ...this.style(type, color), map: this.map, zIndex: 100, ...overrides };
         if (type === "marker") return new google.maps.Marker({ ...options, position: geometry });
         if (type === "polyline") return new google.maps.Polyline({ ...options, path: geometry });
         if (type === "polygon") return new google.maps.Polygon({ ...options, paths: geometry });
@@ -101,7 +113,11 @@ window.CustomLayerDraw = class {
         this.vertices = [];
     }
     setMode(mode) {
-        if (mode !== "select" && this.items.some((item) => !item.registered)) {
+        if (mode === "select" && this.replacementDrawing) {
+            this.replacementDrawing = false;
+            document.getElementById("layer-edit-status").textContent = "다시 그리기를 종료했습니다.";
+        }
+        if (mode !== "select" && !this.replacementDrawing && this.items.some((item) => !item.registered)) {
             this.message.textContent = "현재 도형의 이름·월·시간을 입력해 등록하거나 선택 삭제한 뒤 새 도형을 그려주세요.";
             return;
         }
@@ -149,6 +165,7 @@ window.CustomLayerDraw = class {
         document.getElementById("draw-cancel").disabled = this.mode === "select";
         const minimum = this.mode === "polygon" ? 3 : 2;
         document.getElementById("draw-finish").disabled = !["polygon", "polyline"].includes(this.mode) || this.vertices.length < minimum;
+        document.getElementById("edit-layer-finish").disabled = !this.replacementDrawing || document.getElementById("draw-finish").disabled;
         const count = this.items.filter((item) => !item.registered).length;
         document.getElementById("draw-count").textContent = `등록 대기 도형 ${count}개`;
     }
@@ -156,7 +173,7 @@ window.CustomLayerDraw = class {
         if (!this.active() || this.mode === "select") return;
         const point = latLng.toJSON();
         if (this.mode === "marker") {
-            window.dispatchEvent(new CustomEvent("custom-layer:map-click", { detail: point }));
+            if (!this.replacementDrawing) window.dispatchEvent(new CustomEvent("custom-layer:map-click", { detail: point }));
             this.add("marker", point);
             return;
         }
@@ -195,7 +212,8 @@ window.CustomLayerDraw = class {
         const points = [...this.vertices, latLng.toJSON()];
         const type = this.mode;
         this.preview?.setMap(null);
-        this.preview = this.make(type, this.geometry(type, points), this.color());
+        const color = this.replacementDrawing ? document.getElementById("edit-layer-color").value : this.color();
+        this.preview = this.make(type, this.geometry(type, points), color);
         this.preview.setOptions({ clickable: false, strokeOpacity: 0.65 });
     }
     finish() {
@@ -210,11 +228,19 @@ window.CustomLayerDraw = class {
         }
         const geometry = this.geometry(type, [...this.vertices]);
         this.clearPreview();
+        if (this.replacementDrawing) {
+            this.stageReplacement(type, geometry);
+            return;
+        }
         this.add(type, geometry);
         this.setMode("select");
         this.select(this.items.at(-1));
     }
     add(type, geometry, metadata = null) {
+        if (!metadata && this.replacementDrawing) {
+            this.stageReplacement(type, geometry);
+            return null;
+        }
         if (!metadata && this.items.some((item) => !item.registered)) {
             this.message.textContent = "이미 그린 도형을 먼저 등록하거나 삭제하세요.";
             return null;
@@ -222,17 +248,29 @@ window.CustomLayerDraw = class {
         const item = { id: metadata?.id ?? this.nextId++, type, color: this.color(), registered: Boolean(metadata),
             visible: true, photoUrl: null, ...metadata };
         this.nextId = Math.max(this.nextId, item.id + 1);
-        item.overlay = this.make(type, geometry, item.color);
-        item.overlay.setOptions({ clickable: this.mode === "select" });
-        item.overlay.addListener("click", () => {
-            if (this.active() && this.mode === "select") this.select(item);
-        });
+        this.attachOverlay(item, geometry);
         this.items.push(item);
         this.message.textContent = `${this.labels[type]} 추가됨 · 이 항목의 이름·월·시간을 입력하고 등록하세요.`;
         if (!metadata) { this.setMode("select"); this.select(item); }
         this.refresh();
         this.updateActions();
         return item;
+    }
+    attachOverlay(item, geometry) {
+        const { type } = item;
+        item.overlay = this.make(type, geometry, item.color);
+        item.overlay.setOptions({ clickable: this.mode === "select" });
+        item.overlay.addListener("click", () => {
+            if (this.active() && this.mode === "select") this.select(item);
+        });
+        const changed = () => window.dispatchEvent(new CustomEvent("custom-layer:change"));
+        const events = type === "marker" ? ["position_changed"] : type === "circle"
+            ? ["center_changed", "radius_changed"] : type === "rectangle" ? ["bounds_changed"] : ["dragend"];
+        events.forEach(name => item.overlay.addListener(name, changed));
+        if (["polyline", "polygon"].includes(type)) {
+            const path = item.overlay.getPath();
+            ["insert_at", "set_at", "remove_at"].forEach(name => path.addListener?.(name, changed));
+        }
     }
     removeSelected() {
         if (!this.selected) return;
@@ -246,7 +284,8 @@ window.CustomLayerDraw = class {
         this.refresh();
         this.updateActions();
     }
-    register() {
+    async register() {
+        if (this.replacementDrawing) return;
         const name = document.getElementById("layer-name").value.trim();
         const month = Number(document.getElementById("layer-month").value);
         const time = document.getElementById("layer-time").value;
@@ -259,19 +298,25 @@ window.CustomLayerDraw = class {
         if (!this.validMetadata(name, month, time)) return;
         const file = document.getElementById("layer-photo").files?.[0];
         if (!this.validPhoto(file)) return;
-        Object.assign(draft, { name, month, time, registered: true, photoUrl: file ? URL.createObjectURL(file) : null });
+        const registration = { ...draft, name, month, time, registered: true, photoUrl: file ? URL.createObjectURL(file) : null };
+        if (this.persistRegistration && !await this.persistRegistration(registration)) {
+            if (registration.photoUrl) URL.revokeObjectURL(registration.photoUrl);
+            this.message.textContent = "저장에 실패했습니다. 입력한 내용으로 다시 시도할 수 있습니다.";
+            return;
+        }
+        Object.assign(draft, registration);
         this.setMode("select");
         this.refresh();
         document.getElementById("layer-name").value = "";
         document.getElementById("layer-photo").value = "";
         window.dispatchEvent(new CustomEvent("custom-layer:photo-reset"));
-        this.message.textContent = `‘${name}’ 항목을 나만의 레이어에 등록했습니다. ‘서버 저장’을 눌러 보관하세요.`;
+        this.message.textContent = `‘${name}’ 항목을 나만의 레이어에 저장했습니다.`;
         this.updateActions();
     }
     renderItems() {
         const list = document.getElementById("draw-layers");
         list.replaceChildren();
-        const items = this.items.filter((item) => item.registered && this.matches(item));
+        const items = this.matchingItems();
         if (!items.length) {
             const empty = document.createElement("li");
             empty.className = "layer-hint";
@@ -288,14 +333,7 @@ window.CustomLayerDraw = class {
                 this.setMode("select");
                 this.select(item);
                 this.refresh();
-                const overlay = item.overlay;
-                if (item.type === "marker") this.map.panTo(overlay.getPosition());
-                else if (item.type === "circle" || item.type === "rectangle") this.map.fitBounds(overlay.getBounds());
-                else {
-                    const bounds = new google.maps.LatLngBounds();
-                    overlay.getPath().forEach((point) => bounds.extend(point));
-                    this.map.fitBounds(bounds);
-                }
+                this.focusItems([item]);
             });
             row.append(button);
             const actions = document.createElement("div");
@@ -334,10 +372,31 @@ window.CustomLayerDraw = class {
         return true;
     }
     matches(layer) {
-        if (document.body.dataset.activeMenu !== "custom-layer" || document.getElementById("layer-query").hidden || !this.filter) return true;
+        const queryHidden = document.getElementById("layer-query").hidden;
+        const rankingHidden = document.getElementById("layer-ranking").hidden;
+        if (document.body.dataset.activeMenu !== "custom-layer" || (queryHidden && rankingHidden) || !this.filter) return true;
         const { month, start, end } = this.filter;
         return (!month || layer.month === month) && (start <= end
             ? layer.time >= start && layer.time <= end : layer.time >= start || layer.time <= end);
+    }
+    matchingItems() {
+        const items = this.items.filter(item => item.registered && this.matches(item));
+        if (!document.getElementById("layer-query").hidden) items.sort((a, b) => b.id - a.id);
+        return items;
+    }
+    focusItems(items) {
+        if (!items.length) return;
+        if (items.length === 1 && items[0].type === "marker") {
+            this.map.panTo(items[0].overlay.getPosition());
+            return;
+        }
+        const bounds = new google.maps.LatLngBounds();
+        for (const { type, overlay } of items) {
+            if (type === "marker") bounds.extend(overlay.getPosition());
+            else if (type === "circle" || type === "rectangle") bounds.union(overlay.getBounds());
+            else overlay.getPath().forEach(point => bounds.extend(point));
+        }
+        this.map.fitBounds(bounds, 40);
     }
     refresh() {
         this.items.forEach((item) => {
@@ -350,6 +409,7 @@ window.CustomLayerDraw = class {
         const registered = this.items.filter((item) => item.registered);
         const matches = registered.filter((item) => this.matches(item));
         document.getElementById("layer-query-status").textContent = `전체 항목 ${registered.length}개 중 ${matches.length}개 일치 · 지도 표시 ${matches.filter((item) => item.visible).length}개`;
+        window.dispatchEvent(new CustomEvent("custom-layer:change"));
     }
     query() {
         const month = Number(document.getElementById("query-month").value);
@@ -363,6 +423,8 @@ window.CustomLayerDraw = class {
         this.filter = { month, start, end };
         this.select(null);
         this.refresh();
+        const first = this.matchingItems().find(item => item.visible);
+        if (first) this.focusItems([first]);
     }
     toggleItem(id) {
         const layer = this.items.find((entry) => entry.id === id && entry.registered);
@@ -383,28 +445,55 @@ window.CustomLayerDraw = class {
         this.updateActions();
     }
     closeEdit() {
+        if (this.replacementDrawing) this.setMode("select");
+        this.replacement?.overlay.setMap(null);
+        this.replacement = null;
         this.editingItemId = null;
         document.getElementById("layer-edit-form").hidden = true;
     }
     editItem(id) {
         const layer = this.items.find((entry) => entry.id === id && entry.registered);
         if (!layer) return;
+        this.closeEdit();
         this.editingItemId = id;
         document.getElementById("edit-layer-name").value = layer.name;
         document.getElementById("edit-layer-month").value = String(layer.month);
         document.getElementById("edit-layer-time").value = layer.time;
+        document.getElementById("edit-layer-color").value = layer.color;
+        document.getElementById("edit-layer-shape").value = layer.type;
         document.getElementById("edit-layer-photo").value = "";
         document.getElementById("edit-remove-photo").checked = false;
         document.getElementById("layer-edit-status").textContent = "사진을 선택하면 기존 사진을 교체합니다.";
         document.getElementById("layer-edit-form").hidden = false;
         document.getElementById("edit-layer-name").focus();
     }
+    startReplacement() {
+        if (this.storageBusy || this.editingItemId === null) return;
+        const type = document.getElementById("edit-layer-shape").value;
+        this.replacement?.overlay.setMap(null);
+        this.replacement = null;
+        this.replacementDrawing = true;
+        this.setMode(type);
+        document.getElementById("layer-edit-status").textContent = `${this.labels[type]} 교체 · ${this.message.textContent}`;
+    }
+    stageReplacement(type, geometry) {
+        this.setMode("select");
+        const color = document.getElementById("edit-layer-color").value;
+        const overlay = this.make(type, geometry, color, { clickable: false, zIndex: 120 });
+        this.replacement = { type, geometry, overlay };
+        document.getElementById("layer-edit-status").textContent = "새 도형을 그렸습니다. ‘수정 저장’을 눌러 적용하세요.";
+    }
     saveEdit() {
         const layer = this.items.find((entry) => entry.id === this.editingItemId);
         if (!layer) return;
+        if (this.replacementDrawing) {
+            document.getElementById("layer-edit-status").textContent = "새 도형을 완성하거나 Esc로 그리기를 취소하세요.";
+            return;
+        }
         const name = document.getElementById("edit-layer-name").value.trim();
         const month = Number(document.getElementById("edit-layer-month").value);
         const time = document.getElementById("edit-layer-time").value;
+        const color = document.getElementById("edit-layer-color").value;
         if (!this.validMetadata(name, month, time)) {
             document.getElementById("layer-edit-status").textContent = this.message.textContent;
             return;
@@ -416,10 +505,19 @@ window.CustomLayerDraw = class {
             if (layer.photoUrl) URL.revokeObjectURL(layer.photoUrl);
             layer.photoUrl = file ? URL.createObjectURL(file) : null;
         }
-        Object.assign(layer, { name, month, time });
+        Object.assign(layer, { name, month, time, color });
+        if (this.replacement) {
+            if (this.selected === layer) this.select(null);
+            layer.overlay.setMap(null);
+            google.maps.event.clearInstanceListeners(layer.overlay);
+            layer.type = this.replacement.type;
+            this.attachOverlay(layer, this.replacement.geometry);
+        } else {
+            layer.overlay.setOptions(this.style(layer.type, color));
+        }
         if (this.selected === layer) this.select(this.selected);
         this.closeEdit();
         this.refresh();
-        this.message.textContent = "장소·도형 정보를 수정했습니다.";
+        this.message.textContent = "장소·도형을 수정했습니다. ‘변경사항 저장’으로 서버에 반영하세요.";
     }
 };

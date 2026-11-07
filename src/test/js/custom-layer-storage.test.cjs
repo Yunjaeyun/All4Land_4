@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const { workspace, registerItem } = require('./custom-layer-test-helpers.cjs');
 function storage(env) {
     const store = Object.create(env.context.window.CustomLayerStorage.prototype);
-    Object.assign(store, { draw: env.draw, status: {}, saveButton: {}, loadButton: {}, loaded: true, busy: false });
+    Object.assign(store, { draw: env.draw, status: {}, saveButton: {}, loaded: true, busy: false });
     return store;
 }
 test('snapshot and restore keep one container with independent feature conditions', async () => {
@@ -29,4 +29,20 @@ test('drafts block save and failed initial load cannot overwrite a saved documen
     await store.save(); assert.equal(requests, 0);
     env.draw.removeSelected(); store.loaded = false;
     await store.load(); await store.save(); assert.equal(requests, 1); assert.equal(store.saveButton.disabled, true);
+});
+test('registration only completes after the server accepts the draft', async () => {
+    const env = workspace();
+    const store = storage(env);
+    env.draw.persistRegistration = item => store.save(item);
+    let saved;
+    store.request = async () => { throw new Error('연결 실패'); };
+    const draft = registerItem(env, 'A', 9, '18:00', 'marker');
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(draft.registered, false);
+    assert.equal(env.document.getElementById('layer-name').value, 'A');
+    store.request = async (method, body) => { saved = body; return body; };
+    await env.draw.register();
+    assert.equal(saved.features.length, 1);
+    assert.equal(saved.features[0].name, 'A');
+    assert.equal(draft.registered, true);
 });
