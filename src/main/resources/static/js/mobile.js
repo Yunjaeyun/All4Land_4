@@ -12,11 +12,34 @@
         if (!collapsed) panel.scrollTop = 0;
     }
 
+    // 손잡이: 탭하면 접기/펼치기를 바꾸고, 아래로 끌면 접고 위로 끌면 펼친다
+    const DRAG_THRESHOLD = 24;
     panels.forEach((panel) => {
         const handle = document.createElement("button");
         handle.type = "button";
         handle.className = "sheet-handle";
-        handle.addEventListener("click", () => setCollapsed(panel, !panel.classList.contains("is-collapsed")));
+        let startY = null;
+        let dragged = false;
+        handle.addEventListener("pointerdown", (event) => {
+            startY = event.clientY;
+            dragged = false;
+            handle.setPointerCapture(event.pointerId);
+        });
+        handle.addEventListener("pointermove", (event) => {
+            if (startY === null) return;
+            const dy = event.clientY - startY;
+            if (Math.abs(dy) < DRAG_THRESHOLD) return;
+            dragged = true;
+            setCollapsed(panel, dy > 0);
+            startY = null;
+        });
+        const endDrag = () => { startY = null; };
+        handle.addEventListener("pointerup", endDrag);
+        handle.addEventListener("pointercancel", endDrag);
+        handle.addEventListener("click", () => {
+            if (dragged) { dragged = false; return; }
+            setCollapsed(panel, !panel.classList.contains("is-collapsed"));
+        });
         panel.prepend(handle);
         setCollapsed(panel, false);
     });

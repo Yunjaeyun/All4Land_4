@@ -28,11 +28,12 @@
         display: flex;
         justify-content: center;
         width: calc(100% + 32px);
-        margin: 0 -16px 6px;
-        padding: 10px 0 12px;
+        margin: 0 -16px 4px;
+        padding: 14px 0 16px;
         border: 0;
         background: inherit;
-        cursor: pointer;
+        cursor: grab;
+        touch-action: none; /* 손잡이를 끌 때 패널이 스크롤되지 않게 */
     }
     .sheet-handle::before { content: ""; width: 40px; height: 5px; border-radius: 999px; background: var(--line); }
     .sheet-handle:focus-visible { outline: 2px solid var(--sage); outline-offset: -4px; }
