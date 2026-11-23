@@ -24,10 +24,10 @@ window.CustomLayerStorage = class {
     async request(method, body) {
         const response = await fetch("/api/custom-layers", {
             method, credentials: "same-origin", cache: "no-store",
-            headers: { "Accept": "application/json", ...(body ? { "Content-Type": "application/json" } : {}) },
+           headers: { "Accept": "application/json", ...(body ? { "Content-Type": "application/json" } : {}), ...csrfHeaders() },
             ...(body ? { body: JSON.stringify(body) } : {})
         });
-        if (response.status === 401) throw new Error("로그인이 필요합니다. 로컬 DB 테스트라면 개발 사용자 설정을 확인하세요.");
+       if (response.status === 401) throw new Error("로그인하면 나만의 장소를 저장하고 다시 볼 수 있어요.");
         if (response.status === 403) throw new Error("로그인한 사용자 정보를 DB에서 확인할 수 없습니다.");
         if (!response.ok) throw new Error(`서버 요청 실패 (${response.status}). 입력값·사진 용량과 서버 상태를 확인하세요.`);
         return response.json();

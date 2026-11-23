@@ -37,3 +37,22 @@
     .app-nav::-webkit-scrollbar { display: none; }
     .app-nav > button { font-size: 14px; }
 }
+/* 우측 계정 영역: 로그인은 녹색 버튼, 로그인 후에는 닉네임 + 로그아웃 */
+.app-account { display: flex; align-items: center; gap: 12px; flex-shrink: 0; margin-left: auto; }
+.app-account > span { color: #2b2a27; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.app-account > a { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 12px; background: #3d6b4f; color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.app-account > a:hover { background: #2f5440; }
+.app-account > a:focus-visible { outline: 2px solid #3d6b4f; outline-offset: 2px; }
+.app-account form { margin: 0; }
+.app-account form button { height: 40px; padding: 0 14px; border: 1px solid #dcd5c8; border-radius: 12px; background: #ffffff; color: #6e6a60; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.app-account form button:hover { border-color: #3d6b4f; color: #2b2a27; }
+@media (max-width: 720px) {
+    .app-account { gap: 8px; padding-right: 12px; }
+    .app-account > span { display: none; }
+    .app-account > a { height: 34px; padding: 0 12px; font-size: 13px; }
+    .app-account form button { height: 34px; padding: 0 10px; font-size: 12px; }
+}
+
+/* 로고 영역은 링크(시작 화면으로 이동) */
+a.app-brand { text-decoration: none; color: #2b2a27; }
+a.app-brand:focus-visible { outline: 2px solid #3d6b4f; outline-offset: 4px; border-radius: 10px; }

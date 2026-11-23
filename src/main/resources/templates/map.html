@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}">
+<meta name="_csrf_header" th:content="${_csrf.headerName}">
     <title>SafeStay London · 안전한 동네</title>
     <link rel="stylesheet" th:href="@{/css/navigation.css}">
     <link rel="stylesheet" th:href="@{/css/custom-layer/panel.css}">
@@ -106,6 +108,7 @@
 <aside th:replace="~{accommodation/panel :: panel}"></aside>
 <aside th:replace="~{accommodation/panel :: results}"></aside>
 <div id="map" aria-label="런던 안전한 동네 지도"></div>
+<script th:src="@{/js/csrf.js}"></script>
 <script th:src="@{/js/custom-layer/panel.js}"></script>
 <script th:src="@{/js/custom-layer/draw.js(v=4)}"></script>
 <script th:src="@{/js/custom-layer/storage.js(v=2)}"></script>

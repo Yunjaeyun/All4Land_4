@@ -2,7 +2,7 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
 <header class="app-header" th:fragment="navigation(activeMenu)">
-    <button class="app-brand" type="button" data-menu="map">
+    <a class="app-brand" th:href="@{/}">
         <svg class="app-logo" width="38" height="38" viewBox="0 0 36 36" aria-hidden="true">
             <rect width="36" height="36" rx="10" fill="#3d6b4f"/>
             <path d="M18 7 C13 7 10 10.8 10 15.2 C10 20.8 18 29 18 29 C18 29 26 20.8 26 15.2 C26 10.8 23 7 18 7 Z" fill="#ffffff"/>
@@ -12,13 +12,22 @@
             <span class="app-brand-name">SafeStay <span>London</span></span>
             <span class="app-brand-tagline">런던에서 안심하고 머무는 곳</span>
         </span>
-    </button>
+    </a>
     <nav class="app-nav" aria-label="주 메뉴">
         <button type="button" data-menu="accommodation" aria-controls="accommodation-panel" th:attr="aria-pressed=${activeMenu == 'accommodation'}">숙소 찾기</button>
         <button type="button" data-menu="map" aria-controls="map-panel" th:attr="aria-pressed=${activeMenu == 'map'}">안전한 동네</button>
         <button type="button" data-menu="restaurant" aria-controls="restaurant-panel" th:attr="aria-pressed=${activeMenu == 'restaurant'}">맛집 등록</button>
         <button type="button" data-menu="custom-layer" aria-controls="custom-layer-panel" th:attr="aria-pressed=${activeMenu == 'custom-layer'}">나만의 장소 지도</button>
     </nav>
+    <div class="app-account">
+        <th:block th:if="${loginId != null}">
+            <span th:text="${nickname ?: loginId} + '님'"></span>
+            <form th:action="@{/logout}" method="post" style="display:inline">
+                <button type="submit">로그아웃</button>
+            </form>
+        </th:block>
+        <a th:unless="${loginId != null}" th:href="@{/login}">로그인</a>
+    </div>
 </header>
 </body>
 </html>

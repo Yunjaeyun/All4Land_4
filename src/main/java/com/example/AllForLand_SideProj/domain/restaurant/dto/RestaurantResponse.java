@@ -14,9 +14,10 @@ public record RestaurantResponse(
         BigDecimal latitude,
         BigDecimal longitude,
         String lsoaName,
-        Integer safetyLevel
+        Integer safetyLevel,
+        boolean mine
 ) {
-    public static RestaurantResponse from(Restaurant restaurant) {
+    public static RestaurantResponse from(Restaurant restaurant, String loginId) {
         SafetyZone zone = restaurant.getSafetyZone();
         return new RestaurantResponse(
                 restaurant.getId(),
@@ -27,7 +28,8 @@ public record RestaurantResponse(
                 restaurant.getLatitude(),
                 restaurant.getLongitude(),
                 zone.getLsoaName(),
-                zone.getSafetyLevel()
+                zone.getSafetyLevel(),
+                restaurant.isOwnedBy(loginId)
         );
     }
 }

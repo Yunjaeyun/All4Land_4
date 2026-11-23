@@ -13,7 +13,7 @@ public class LayerRankingController {
     public LayerRankingController(LayerRankingService service) { this.service = service; }
     @PostMapping
     public ResponseEntity<LayerRankingService.Result> rank(@RequestBody LayerDocument document,
-            @RequestParam(defaultValue = "interest") String order) {
+            @RequestParam(name = "order", defaultValue = "interest") String order) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.rank(document, order));
     }
 }
