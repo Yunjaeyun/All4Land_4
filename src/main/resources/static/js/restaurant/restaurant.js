@@ -56,6 +56,7 @@ async function initRestaurants(map) {
         [
             restaurant.address,
             detailText(restaurant),
+            restaurant.authorNickname ? `등록자 ${restaurant.authorNickname}` : null,
             `${restaurant.lsoaName} · 치안 ${restaurant.safetyLevel}등급 (${SAFETY_LABELS[restaurant.safetyLevel - 1]})`
         ].filter(Boolean).forEach((line) => {
             const row = document.createElement("div");
@@ -95,7 +96,9 @@ async function initRestaurants(map) {
         focusButton.type = "button";
         focusButton.className = "restaurant-item";
         name.textContent = restaurant.name;
-        sub.textContent = detailText(restaurant) || restaurant.address;
+        const subText = [detailText(restaurant), restaurant.authorNickname ? `${restaurant.authorNickname} 등록` : null]
+            .filter(Boolean).join(" · ");
+        sub.textContent = subText || restaurant.address;
         focusButton.append(name, sub);
         focusButton.addEventListener("click", () => {
             showMarkers();

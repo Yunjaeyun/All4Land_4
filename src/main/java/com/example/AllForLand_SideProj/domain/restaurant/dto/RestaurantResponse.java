@@ -15,6 +15,7 @@ public record RestaurantResponse(
         BigDecimal longitude,
         String lsoaName,
         Integer safetyLevel,
+        String authorNickname,
         boolean mine
 ) {
     public static RestaurantResponse from(Restaurant restaurant, String loginId) {
@@ -29,6 +30,7 @@ public record RestaurantResponse(
                 restaurant.getLongitude(),
                 zone.getLsoaName(),
                 zone.getSafetyLevel(),
+                restaurant.getUser() == null ? null : restaurant.getUser().getNickname(),
                 restaurant.isOwnedBy(loginId)
         );
     }
