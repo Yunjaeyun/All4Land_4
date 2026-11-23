@@ -3,6 +3,31 @@ const ACCOMMODATION_ROOM_LABELS = { ENTIRE_HOME: "전체 집", PRIVATE_ROOM: "�
 const ACCOMMODATION_DAY_LABELS = { weekday: "평일", weekend: "주말" };
 const ACCOMMODATION_ALL_LIMIT = 500;
 const ACCOMMODATION_ALL_PAGE_SIZE = 100;
+const ACCOMMODATION_HEART_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path fill="none" d="M12 21s-7.5-4.6-9.5-9.1C1.2 8.9 3.3 5 7 5c2 0 3.6 1.1 5 2.9C13.4 6.1 15 5 17 5c3.7 0 5.8 3.9 4.5 6.9C19.5 16.4 12 21 12 21z"/></svg>';
+
+function accommodationCircleIcon(rank) {
+    return {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: rank ? 10 : 6,
+        fillColor: "#3d6b4f",
+        fillOpacity: 1,
+        strokeColor: "#ffffff",
+        strokeWeight: 2
+    };
+}
+
+// 찜한 숙소는 둥근 사각형 안에 하트를 넣은 핀으로 표시 (일반 숙소 원, 맛집 물방울과 구분)
+function accommodationFavoriteIcon() {
+    const svg = "<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'>"
+        + "<rect x='1.5' y='1.5' width='27' height='27' rx='9' fill='#b8475e' stroke='#ffffff' stroke-width='2.5'/>"
+        + "<path d='M15 22s-6.6-4-6.6-8.4c0-2.2 1.6-3.9 3.6-3.9 1.2 0 2.2.6 3 1.6.8-1 1.8-1.6 3-1.6 2 0 3.6 1.7 3.6 3.9C21.6 18 15 22 15 22z' fill='#ffffff'/>"
+        + "</svg>";
+    return {
+        url: "data:image/svg+xml," + encodeURIComponent(svg),
+        scaledSize: new google.maps.Size(30, 30),
+        anchor: new google.maps.Point(15, 15)
+    };
+}
 
 function initAccommodations(map) {
     const form = document.getElementById("accommodation-form");
@@ -16,12 +41,21 @@ function initAccommodations(map) {
     const sizeSelect = form.querySelector('[name="size"]');
     const keywordInput = form.querySelector('[name="keyword"]');
     const count = document.getElementById("accommodation-count");
+    const resultsBox = document.getElementById("accommodation-results");
+    const loggedIn = resultsBox.dataset.loggedIn === "true";
+    const scopeAll = document.getElementById("accommodation-scope-all");
+    const scopeFavorites = document.getElementById("accommodation-scope-favorites");
+    const scopeHint = document.getElementById("accommodation-scope-hint");
+    let scope = "all";
     let query = null;
     const infoWindow = new google.maps.InfoWindow({ maxWidth: 320 });
     const entries = [];
     const byKey = new Map();
     let requestId = 0;
     let searched = false;
+
+    scopeFavorites.disabled = !loggedIn;
+    scopeHint.hidden = loggedIn;
 
     function setEmpty(text) {
         empty.textContent = text ?? "";
@@ -116,6 +150,13 @@ function initAccommodations(map) {
         const head = el("div", "acc-head");
         head.append(el("strong", "acc-title", displayName(entry)));
         head.append(el("span", `acc-safety level-${base.safetyLevel}`, `치안 ${safetyLabel(base.safetyLevel)}`));
+        const fav = el("button", "acc-fav acc-fav-info");
+        fav.type = "button";
+        fav.innerHTML = ACCOMMODATION_HEART_SVG;
+        fav.addEventListener("click", () => toggleFavorite(entry));
+        entry.infoFav = fav;
+        syncFavoriteButton(fav, isFavorite(entry), base.name);
+        head.append(fav);
         box.append(head);
 
         const price = el("div", "acc-price");
@@ -158,14 +199,7 @@ function initAccommodations(map) {
             map,
             zIndex: 8,
             label: entry.rank ? { text: String(entry.rank), color: "#ffffff", fontSize: "11px", fontWeight: "700" } : undefined,
-            icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: entry.rank ? 10 : 6,
-                fillColor: "#3d6b4f",
-                fillOpacity: 1,
-                strokeColor: "#ffffff",
-                strokeWeight: 2
-            }
+            icon: accommodationCircleIcon(entry.rank)
         });
         const li = document.createElement("li");
         const button = document.createElement("button");
@@ -190,7 +224,15 @@ function initAccommodations(map) {
             openInfo(entry);
         });
         entry.marker.addListener("click", () => openInfo(entry));
-        li.append(button);
+        entry.favButton = document.createElement("button");
+        entry.favButton.type = "button";
+        entry.favButton.className = "acc-fav";
+        entry.favButton.innerHTML = ACCOMMODATION_HEART_SVG;
+        entry.favButton.addEventListener("click", (event) => {
+            event.stopPropagation();
+            toggleFavorite(entry);
+        });
+        li.append(button, entry.favButton);
         list.append(li);
         entry.li = li;
         entries.push(entry);
@@ -221,6 +263,114 @@ function initAccommodations(map) {
         small.textContent = dayLabel(entry);
         entry.price.replaceChildren(main, small);
         entry.marker.setTitle?.(displayName(entry));
+        syncFavorite(entry);
+    }
+
+    function isFavorite(entry) {
+        return entry.items.some((row) => row.favorited);
+    }
+
+    function syncFavoriteButton(button, on, name) {
+        button.classList.toggle("is-on", on);
+        button.setAttribute("aria-pressed", String(on));
+        button.setAttribute("aria-label", on ? `${name} 찜 해제` : `${name} 찜하기`);
+        button.querySelector("path")?.setAttribute("fill", on ? "currentColor" : "none");
+    }
+
+    function syncFavorite(entry) {
+        const on = isFavorite(entry);
+        syncFavoriteButton(entry.favButton, on, entry.items[0].name);
+        if (entry.infoFav) syncFavoriteButton(entry.infoFav, on, entry.items[0].name);
+        if (on) {
+            entry.marker.setIcon(accommodationFavoriteIcon());
+            entry.marker.setLabel?.(null);
+        } else {
+            entry.marker.setIcon(accommodationCircleIcon(entry.rank));
+            entry.marker.setLabel?.(entry.rank
+                ? { text: String(entry.rank), color: "#ffffff", fontSize: "11px", fontWeight: "700" }
+                : null);
+        }
+    }
+
+    function updateCount() {
+        if (scope === "favorites") {
+            count.textContent = `찜한 숙소 ${formatNumber(entries.length)}곳`;
+        } else if (safestToggle.checked) {
+            count.textContent = `안전한 숙소 상위 ${formatNumber(entries.length)}개`;
+        } else {
+            count.textContent = `${formatNumber(entries.length)}곳`;
+        }
+    }
+
+    async function toggleFavorite(entry) {
+        if (!loggedIn) {
+            showMessage("로그인하면 숙소를 찜할 수 있어요.", true);
+            return;
+        }
+        const on = isFavorite(entry);
+        entry.favButton.disabled = true;
+        try {
+            const responses = await Promise.all(entry.items.map((row) => fetch(`/api/accommodations/${row.id}/favorite`, {
+                method: on ? "DELETE" : "POST",
+                headers: csrfHeaders()
+            })));
+            if (responses.some((response) => !response.ok)) throw new Error("favorite failed");
+            entry.items.forEach((row) => { row.favorited = !on; });
+            if (scope === "favorites" && on) {
+                removeEntry(entry);
+                setEmpty(entries.length > 0 ? null : "찜한 숙소가 없어요. 숙소 카드의 하트를 눌러 담아 보세요.");
+            } else {
+                refresh(entry);
+            }
+            updateCount();
+            message.hidden = true;
+        } catch (error) {
+            showMessage("찜 상태를 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.", true);
+        } finally {
+            entry.favButton.disabled = false;
+        }
+    }
+
+    function removeEntry(entry) {
+        entry.marker.setMap(null);
+        entry.li.remove();
+        const index = entries.indexOf(entry);
+        if (index >= 0) entries.splice(index, 1);
+        renumber();
+    }
+
+    function setScopeButtons(next) {
+        scope = next;
+        scopeAll.setAttribute("aria-pressed", String(next === "all"));
+        scopeFavorites.setAttribute("aria-pressed", String(next === "favorites"));
+        scopeAll.className = next === "all" ? "button" : "button secondary";
+        scopeFavorites.className = next === "favorites" ? "button" : "button secondary";
+    }
+
+    async function loadFavorites() {
+        const id = ++requestId;
+        setScopeButtons("favorites");
+        clearEntries();
+        setEmpty(null);
+        message.hidden = true;
+        try {
+            const response = await fetch("/api/accommodations/favorites");
+            if (id !== requestId) return;
+            if (!response.ok) {
+                showMessage(response.status === 401 ? "로그인하면 찜한 숙소를 볼 수 있어요." : "찜한 숙소를 불러오지 못했어요.", true);
+                return;
+            }
+            const items = await response.json();
+            if (id !== requestId) return;
+            addItems(items);
+            renumber();
+            updateCount();
+            setEmpty(entries.length > 0 ? null : "찜한 숙소가 없어요. 숙소 카드의 하트를 눌러 담아 보세요.");
+            if (entries.length > 0) fitToResults();
+        } catch (error) {
+            if (id !== requestId) return;
+            showMessage("찜한 숙소를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.", true);
+        }
     }
 
     function attachItem(item) {
@@ -268,6 +418,7 @@ function initAccommodations(map) {
 
     async function search(page = 0) {
         const id = ++requestId;
+        if (page === 0) setScopeButtons("all");
         const params = page === 0 ? (query = buildQuery()) : query;
         const top = safestToggle.checked;
         const choice = sizeSelect.value;
@@ -304,9 +455,7 @@ function initAccommodations(map) {
             }
             trimTo(target);
             renumber();
-            count.textContent = top
-                ? `안전한 숙소 상위 ${formatNumber(entries.length)}개`
-                : `${formatNumber(entries.length)}곳`;
+            updateCount();
             setEmpty(entries.length > 0 ? null : "조건에 맞는 숙소가 없습니다.");
             message.hidden = true;
             if (choice === "all" && body.hasNext) showMessage(`최대 ${ACCOMMODATION_ALL_LIMIT}개까지만 보여드려요.`);
@@ -334,6 +483,13 @@ function initAccommodations(map) {
         syncSafest();
         markBorough("");
         search(0);
+    });
+
+    scopeAll.addEventListener("click", () => {
+        if (scope !== "all") search(0);
+    });
+    scopeFavorites.addEventListener("click", () => {
+        if (scope !== "favorites" && loggedIn) loadFavorites();
     });
 
     window.addEventListener("app:menu", (event) => {
@@ -394,6 +550,7 @@ function initAccommodations(map) {
     });
 
     setEmpty("검색 버튼을 누르면 결과가 나와요.");
+    setScopeButtons("all");
     syncSafest();
     submitButton.disabled = false;
 }

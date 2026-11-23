@@ -25,6 +25,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/restaurants/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/restaurants/**").authenticated()
                         .requestMatchers("/api/custom-layers/**").authenticated()
+                        .requestMatchers("/api/accommodations/favorites", "/api/accommodations/*/favorite").authenticated()
                         .anyRequest().permitAll())
                 .formLogin(form -> form
                         .loginPage("/login")

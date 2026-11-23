@@ -122,3 +122,19 @@ aside.accommodation-results::-webkit-scrollbar { display: none; }
 aside.accommodation-results .accommodation-list-section { margin-top: 0; padding-top: 0; border-top: 0; }
 aside.accommodation-results .accommodation-list-section h2 { margin-bottom: 12px; font-size: 16px; }
 .accommodation-form select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236e6a60' stroke-width='1.6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; appearance: none; }
+/* 아래 내용을 static/css/accommodation/panel.css 맨 끝에 붙여 넣으세요 */
+.accommodation-results .accommodation-scope { display: flex; gap: 8px; margin: 0 0 10px; }
+.accommodation-results .accommodation-scope .button { flex: 1; min-height: 42px; border: 0; border-radius: 12px; background: #2b2a27; color: #ffffff; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.accommodation-results .accommodation-scope .button.secondary { background: #ffffff; color: #6e6a60; border: 1px solid #dcd5c8; }
+.accommodation-results .accommodation-scope .button:disabled { opacity: 0.5; cursor: not-allowed; }
+.accommodation-results .accommodation-scope .button:focus-visible { outline: 2px solid #3d6b4f; outline-offset: 2px; }
+.accommodation-results .accommodation-hint { margin: 0 0 12px; color: #3d6b4f; font-size: 12px; font-weight: 500; }
+.accommodation-list li { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.accommodation-list li .accommodation-item { flex: 1; min-width: 0; }
+.accommodation-list .acc-fav { flex: 0 0 40px; width: 40px; height: 40px; display: grid; place-items: center; padding: 0; border: 1px solid #eae4d8; border-radius: 14px; background: #ffffff; color: #9a958a; cursor: pointer; }
+.accommodation-list .acc-fav:hover { border-color: #b8475e; color: #b8475e; }
+.accommodation-list .acc-fav.is-on { color: #b8475e; border-color: #e6c3ca; background: #fbf1f3; }
+.accommodation-list .acc-fav:disabled { opacity: 0.5; cursor: wait; }
+.accommodation-list .acc-fav:focus-visible { outline: 2px solid #3d6b4f; outline-offset: 2px; }
+.accommodation-info .acc-head { display: flex; align-items: center; gap: 8px; }
+.accommodation-info .acc-fav-info { flex: 0 0 auto; width: 34px; height: 34px; margin-left: auto; border-radius: 12px; }
