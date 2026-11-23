@@ -1,5 +1,7 @@
 .restaurant-row { display: flex; gap: 8px; align-items: stretch; }
 .restaurant-row .layer-toggle { flex: 1; }
+.restaurant-scope { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.restaurant-scope .button { width: 100%; }
 .restaurant-panel .button {
     min-height: 48px;
     padding: 0 16px;
