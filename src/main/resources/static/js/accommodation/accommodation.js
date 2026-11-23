@@ -153,6 +153,7 @@ function initAccommodations(map) {
         const fav = el("button", "acc-fav acc-fav-info");
         fav.type = "button";
         fav.innerHTML = ACCOMMODATION_HEART_SVG;
+        fav.hidden = !loggedIn;
         fav.addEventListener("click", () => toggleFavorite(entry));
         entry.infoFav = fav;
         syncFavoriteButton(fav, isFavorite(entry), base.name);
@@ -202,6 +203,7 @@ function initAccommodations(map) {
             icon: accommodationCircleIcon(entry.rank)
         });
         const li = document.createElement("li");
+        li.className = "acc-card";
         const button = document.createElement("button");
         entry.badge = document.createElement("span");
         entry.badge.className = "acc-badge";
@@ -227,6 +229,7 @@ function initAccommodations(map) {
         entry.favButton = document.createElement("button");
         entry.favButton.type = "button";
         entry.favButton.className = "acc-fav";
+        entry.favButton.hidden = !loggedIn;
         entry.favButton.innerHTML = ACCOMMODATION_HEART_SVG;
         entry.favButton.addEventListener("click", (event) => {
             event.stopPropagation();
@@ -496,6 +499,8 @@ function initAccommodations(map) {
         const active = event.detail.menu === "accommodation";
         entries.forEach(({ marker }) => marker.setMap(active ? map : null));
         if (!active) infoWindow.close();
+        // 로그인 후 처음 열면 기본 범위(전체 숙소)를 바로 불러와 카드와 하트를 보여준다
+        if (active && loggedIn && !searched) search(0);
     });
 
     const boroughBox = document.getElementById("accommodation-boroughs");

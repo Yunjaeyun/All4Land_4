@@ -49,20 +49,48 @@ async function initRestaurants(map) {
 
     function infoContent(restaurant) {
         const box = document.createElement("div");
-        const title = document.createElement("strong");
         box.className = "restaurant-info";
+
+        const head = document.createElement("div");
+        head.className = "ri-head";
+        const title = document.createElement("strong");
         title.textContent = restaurant.name;
-        box.append(title);
-        [
-            restaurant.address,
-            detailText(restaurant),
-            restaurant.authorNickname ? `등록자 ${restaurant.authorNickname}` : null,
-            `${restaurant.lsoaName} · 치안 ${restaurant.safetyLevel}등급 (${SAFETY_LABELS[restaurant.safetyLevel - 1]})`
-        ].filter(Boolean).forEach((line) => {
+        const safety = document.createElement("span");
+        safety.className = `ri-safety level-${restaurant.safetyLevel}`;
+        safety.textContent = `치안 ${restaurant.safetyLevel}등급 · ${SAFETY_LABELS[restaurant.safetyLevel - 1]}`;
+        head.append(title, safety);
+        box.append(head);
+
+        if (restaurant.address) {
+            const address = document.createElement("p");
+            address.className = "ri-address";
+            address.textContent = restaurant.address;
+            box.append(address);
+        }
+
+        const tags = [restaurant.cuisineType, restaurant.rating != null ? `★ ${restaurant.rating}` : null].filter(Boolean);
+        if (tags.length) {
             const row = document.createElement("div");
-            row.textContent = line;
+            row.className = "ri-tags";
+            tags.forEach((tag) => {
+                const chip = document.createElement("span");
+                chip.className = "ri-tag";
+                chip.textContent = tag;
+                row.append(chip);
+            });
             box.append(row);
-        });
+        }
+
+        const foot = document.createElement("div");
+        foot.className = "ri-foot";
+        const author = document.createElement("span");
+        author.className = "ri-author";
+        author.textContent = restaurant.authorNickname ? `등록자 ${restaurant.authorNickname}` : "등록자 정보 없음";
+        const area = document.createElement("span");
+        area.className = "ri-area";
+        area.textContent = restaurant.lsoaName || "";
+        foot.append(author, area);
+        box.append(foot);
         return box;
     }
 
@@ -93,13 +121,13 @@ async function initRestaurants(map) {
         const focusButton = document.createElement("button");
         const name = document.createElement("strong");
         const sub = document.createElement("span");
+        const author = document.createElement("span");
         focusButton.type = "button";
         focusButton.className = "restaurant-item";
         name.textContent = restaurant.name;
-        const subText = [detailText(restaurant), restaurant.authorNickname ? `${restaurant.authorNickname} 등록` : null]
-            .filter(Boolean).join(" · ");
-        sub.textContent = subText || restaurant.address;
-        focusButton.append(name, sub);
+        sub.textContent = detailText(restaurant) || restaurant.address;
+        author.textContent = restaurant.authorNickname ? `등록자 ${restaurant.authorNickname}` : "등록자 정보 없음";
+        focusButton.append(name, sub, author);
         focusButton.addEventListener("click", () => {
             showMarkers();
             map.panTo(entry.marker.getPosition());
