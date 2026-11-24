@@ -8,6 +8,9 @@ import java.util.List;
 
 public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
 
-    @EntityGraph(attributePaths = "safetyZone")
-    List<Restaurant> findAllByOrderByIdDesc();
+	 @EntityGraph(attributePaths = {"safetyZone", "user"})
+	    List<Restaurant> findAllByOrderByIdDesc();
+
+	    @EntityGraph(attributePaths = {"safetyZone", "user"})
+	    List<Restaurant> findAllByUserLoginIdOrderByIdDesc(String loginId);
 }

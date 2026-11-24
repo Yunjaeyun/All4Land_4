@@ -1,4 +1,3 @@
-/* 맛집 레이어: 목록·마커 표시, 지도 클릭으로 맛집 등록, 목록에서 삭제 (/api/restaurants) */
 const SAFETY_LABELS = ["매우 안전", "안전", "보통", "주의", "위험"];
 
 async function initRestaurants(map) {
@@ -12,15 +11,23 @@ async function initRestaurants(map) {
     const list = document.getElementById("restaurant-list");
     const count = document.getElementById("restaurant-count");
     const empty = document.getElementById("restaurant-empty");
+    const scopeBox = document.querySelector(".restaurant-scope");
+    const allButton = document.getElementById("restaurant-scope-all");
+    const mineButton = document.getElementById("restaurant-scope-mine");
+    const scopeHint = document.getElementById("restaurant-scope-hint");
     const infoWindow = new google.maps.InfoWindow();
-    // id → { restaurant, marker, item } (목록은 최신 등록 순)
     const entries = new Map();
     let openEntry = null;
     let picking = false;
     let picked = null;
     let draftMarker = null;
+    let scope = "all";
+    let loadRevision = 0;
 
-    // 맛집 관리 메뉴에서만 Google 지도의 음식점·상점 아이콘을 보인다
+    const loggedIn = scopeBox.dataset.loggedIn === "true";
+    mineButton.disabled = !loggedIn;
+    scopeHint.hidden = loggedIn;
+
     const baseStyles = map.get("styles") || [];
     const restaurantStyles = [...baseStyles, { featureType: "poi.business", stylers: [{ visibility: "on" }] }];
     function syncMapStyles() {
@@ -34,21 +41,56 @@ async function initRestaurants(map) {
         message.hidden = false;
     }
 
+    function failureText(response, body, fallback) {
+        if (body.message) return body.message;
+        if (response.status === 401) return "로그인하면 맛집을 등록하고 관리할 수 있어요.";
+        return fallback;
+    }
+
     function infoContent(restaurant) {
         const box = document.createElement("div");
-        const title = document.createElement("strong");
         box.className = "restaurant-info";
+
+        const head = document.createElement("div");
+        head.className = "ri-head";
+        const title = document.createElement("strong");
         title.textContent = restaurant.name;
-        box.append(title);
-        [
-            restaurant.address,
-            detailText(restaurant),
-            `${restaurant.lsoaName} · 치안 ${restaurant.safetyLevel}등급 (${SAFETY_LABELS[restaurant.safetyLevel - 1]})`
-        ].filter(Boolean).forEach((line) => {
+        const safety = document.createElement("span");
+        safety.className = `ri-safety level-${restaurant.safetyLevel}`;
+        safety.textContent = `치안 ${restaurant.safetyLevel}등급 · ${SAFETY_LABELS[restaurant.safetyLevel - 1]}`;
+        head.append(title, safety);
+        box.append(head);
+
+        if (restaurant.address) {
+            const address = document.createElement("p");
+            address.className = "ri-address";
+            address.textContent = restaurant.address;
+            box.append(address);
+        }
+
+        const tags = [restaurant.cuisineType, restaurant.rating != null ? `★ ${restaurant.rating}` : null].filter(Boolean);
+        if (tags.length) {
             const row = document.createElement("div");
-            row.textContent = line;
+            row.className = "ri-tags";
+            tags.forEach((tag) => {
+                const chip = document.createElement("span");
+                chip.className = "ri-tag";
+                chip.textContent = tag;
+                row.append(chip);
+            });
             box.append(row);
-        });
+        }
+
+        const foot = document.createElement("div");
+        foot.className = "ri-foot";
+        const author = document.createElement("span");
+        author.className = "ri-author";
+        author.textContent = restaurant.authorNickname ? `등록자 ${restaurant.authorNickname}` : "등록자 정보 없음";
+        const area = document.createElement("span");
+        area.className = "ri-area";
+        area.textContent = restaurant.lsoaName || "";
+        foot.append(author, area);
+        box.append(foot);
         return box;
     }
 
@@ -79,24 +121,29 @@ async function initRestaurants(map) {
         const focusButton = document.createElement("button");
         const name = document.createElement("strong");
         const sub = document.createElement("span");
-        const deleteButton = document.createElement("button");
+        const author = document.createElement("span");
         focusButton.type = "button";
         focusButton.className = "restaurant-item";
         name.textContent = restaurant.name;
         sub.textContent = detailText(restaurant) || restaurant.address;
-        focusButton.append(name, sub);
+        author.textContent = restaurant.authorNickname ? `등록자 ${restaurant.authorNickname}` : "등록자 정보 없음";
+        focusButton.append(name, sub, author);
         focusButton.addEventListener("click", () => {
             showMarkers();
             map.panTo(entry.marker.getPosition());
             if (map.getZoom() < 15) map.setZoom(15);
             openInfo(entry);
         });
-        deleteButton.type = "button";
-        deleteButton.className = "button danger";
-        deleteButton.textContent = "삭제";
-        deleteButton.setAttribute("aria-label", `${restaurant.name} 삭제`);
-        deleteButton.addEventListener("click", () => deleteRestaurant(entry, deleteButton));
-        item.append(focusButton, deleteButton);
+        item.append(focusButton);
+        if (restaurant.mine) {
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.className = "button danger";
+            deleteButton.textContent = "삭제";
+            deleteButton.setAttribute("aria-label", `${restaurant.name} 삭제`);
+            deleteButton.addEventListener("click", () => deleteRestaurant(entry, deleteButton));
+            item.append(deleteButton);
+        }
         return item;
     }
 
@@ -110,16 +157,33 @@ async function initRestaurants(map) {
         syncListState();
     }
 
+    function clearEntries() {
+        infoWindow.close();
+        openEntry = null;
+        entries.forEach(({ marker, item }) => {
+            marker.setMap(null);
+            item.remove();
+        });
+        entries.clear();
+        syncListState();
+    }
+
     async function deleteRestaurant(entry, button) {
         const { restaurant } = entry;
         if (!confirm(`'${restaurant.name}'을(를) 삭제할까요?`)) return;
         button.disabled = true;
         try {
-            const response = await fetch(`/api/restaurants/${restaurant.id}`, { method: "DELETE" });
-            // 이미 지워진 맛집(404)도 화면에서는 정리한다
+            const response = await fetch(`/api/restaurants/${restaurant.id}`, {
+                method: "DELETE",
+                headers: csrfHeaders()
+            });
+            if (response.status === 403) {
+                showMessage("본인이 등록한 맛집만 삭제할 수 있어요.", true);
+                return;
+            }
             if (!response.ok && response.status !== 404) {
                 const body = await response.json().catch(() => ({}));
-                showMessage(body.message || `삭제에 실패했습니다. (HTTP ${response.status})`, true);
+                showMessage(failureText(response, body, `삭제에 실패했습니다. (HTTP ${response.status})`), true);
                 return;
             }
             removeEntry(restaurant.id);
@@ -138,12 +202,9 @@ async function initRestaurants(map) {
             title: restaurant.name,
             zIndex: 10,
             icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 7,
-                fillColor: "#c27a3a",
-                fillOpacity: 1,
-                strokeColor: "#ffffff",
-                strokeWeight: 2
+                url: "data:image/svg+xml," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='32' height='40' viewBox='0 0 32 40'><path d='M16 1.5C8.3 1.5 2 7.8 2 15.5 2 25.5 16 38.5 16 38.5S30 25.5 30 15.5C30 7.8 23.7 1.5 16 1.5Z' fill='#c27a3a' stroke='#ffffff' stroke-width='2.2'/><g transform='translate(16 15) scale(0.5) translate(-12 -12)' fill='none' stroke='#ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2'/><path d='M7 2v20'/><path d='M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7'/></g></svg>"),
+                scaledSize: new google.maps.Size(32, 40),
+                anchor: new google.maps.Point(16, 40)
             }
         });
         const entry = { restaurant, marker };
@@ -167,6 +228,51 @@ async function initRestaurants(map) {
         draftMarker = null;
     }
 
+    async function loadRestaurants(nextScope) {
+        const revision = ++loadRevision;
+        scope = nextScope;
+        clearEntries();
+        let restaurants;
+        try {
+            const response = await fetch(`/api/restaurants?scope=${nextScope}`, {
+                headers: { Accept: "application/json" }
+            });
+            const contentType = response.headers.get("content-type") || "";
+            if (!response.ok || !contentType.includes("application/json")) {
+                const text = await response.text();
+                console.error("[맛집] 목록 응답 오류", response.status, contentType, text.slice(0, 300));
+                throw new Error(`HTTP ${response.status}`);
+            }
+            restaurants = await response.json();
+        } catch (error) {
+            console.error("[맛집] 목록 불러오기 실패", error);
+            if (revision !== loadRevision) return;
+            showMessage("맛집 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.", true);
+            return;
+        }
+        if (revision !== loadRevision) return;
+        try {
+            restaurants.forEach((restaurant) => addRestaurant(restaurant));
+            syncListState();
+        } catch (error) {
+            console.error("[맛집] 목록 표시 실패", error);
+            showMessage("맛집을 표시하는 중 문제가 생겼어요. 페이지를 새로고침해 주세요.", true);
+        }
+    }
+
+    function setScope(nextScope) {
+        if (nextScope === scope) return;
+        allButton.setAttribute("aria-pressed", String(nextScope === "all"));
+        mineButton.setAttribute("aria-pressed", String(nextScope === "mine"));
+        allButton.className = nextScope === "all" ? "button" : "button secondary";
+        mineButton.className = nextScope === "mine" ? "button" : "button secondary";
+        message.hidden = true;
+        loadRestaurants(nextScope);
+    }
+
+    allButton.addEventListener("click", () => setScope("all"));
+    mineButton.addEventListener("click", () => setScope("mine"));
+
     toggle.addEventListener("change", () => {
         entries.forEach(({ marker }) => marker.setMap(toggle.checked ? map : null));
         if (!toggle.checked) infoWindow.close();
@@ -182,17 +288,14 @@ async function initRestaurants(map) {
     document.getElementById("restaurant-pick-cancel").addEventListener("click", resetAdding);
     document.getElementById("restaurant-form-cancel").addEventListener("click", resetAdding);
 
-    // 다른 메뉴로 넘어가면 추가 작업을 취소해 내 레이어 그리기와 클릭이 겹치지 않게 한다
     window.addEventListener("app:menu", (event) => {
         if (event.detail.menu !== "restaurant" && (picking || !form.hidden)) resetAdding();
         syncMapStyles();
     });
 
-    // 위치 선택 중이거나 폼이 열려 있으면 클릭한 곳으로 위치를 옮긴다
     map.addListener("click", (event) => {
         if (document.body.dataset.activeMenu !== "restaurant") return;
         if (!picking && form.hidden) return;
-        // 음식점 아이콘을 클릭했으면 Google 기본 정보창 대신 그 위치를 사용한다
         if (event.placeId) event.stop();
         picking = false;
         picked = event.latLng;
@@ -213,7 +316,7 @@ async function initRestaurants(map) {
         try {
             const response = await fetch("/api/restaurants", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", ...csrfHeaders() },
                 body: JSON.stringify({
                     name: data.get("name"),
                     address: data.get("address"),
@@ -225,7 +328,7 @@ async function initRestaurants(map) {
             });
             const body = await response.json().catch(() => ({}));
             if (!response.ok) {
-                showMessage(body.message || `저장에 실패했습니다. (HTTP ${response.status})`, true);
+                showMessage(failureText(response, body, `저장에 실패했습니다. (HTTP ${response.status})`), true);
                 return;
             }
             showMarkers();
@@ -239,14 +342,7 @@ async function initRestaurants(map) {
         }
     });
 
-    try {
-        const response = await fetch("/api/restaurants");
-        if (!response.ok) throw new Error(`Restaurant HTTP ${response.status}`);
-        (await response.json()).forEach((restaurant) => addRestaurant(restaurant));
-        syncListState();
-        toggle.disabled = false;
-        addButton.disabled = false;
-    } catch (error) {
-        showMessage("맛집은 DB에 연결된 상태에서만 이용할 수 있습니다.", true);
-    }
+    await loadRestaurants("all");
+    toggle.disabled = false;
+    addButton.disabled = false;
 }

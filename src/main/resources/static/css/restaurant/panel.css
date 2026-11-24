@@ -1,5 +1,7 @@
 .restaurant-row { display: flex; gap: 8px; align-items: stretch; }
 .restaurant-row .layer-toggle { flex: 1; }
+.restaurant-scope { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.restaurant-scope .button { width: 100%; }
 .restaurant-panel .button {
     min-height: 48px;
     padding: 0 16px;
@@ -26,8 +28,20 @@
 .restaurant-form .actions { display: flex; justify-content: flex-end; gap: 8px; }
 .restaurant-message { margin: 10px 0 0; color: var(--sage); font-size: 12px; }
 .restaurant-message.error { color: var(--warn); }
-.restaurant-info { max-width: 260px; color: var(--ink); font-size: 12px; line-height: 1.55; }
-.restaurant-info strong { display: block; margin-bottom: 3px; font-size: 14px; }
+.restaurant-info { width: 240px; max-width: 260px; color: var(--ink); font-size: 12px; line-height: 1.5; }
+.restaurant-info .ri-head { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.restaurant-info strong { display: block; font-size: 16px; font-weight: 700; line-height: 1.3; }
+.restaurant-info .ri-safety { display: inline-flex; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.restaurant-info .ri-safety.level-1, .restaurant-info .ri-safety.level-2 { background: #e6f0ea; color: #3d6b4f; }
+.restaurant-info .ri-safety.level-3 { background: #f6efd9; color: #7a5a16; }
+.restaurant-info .ri-safety.level-4 { background: #f8e6d8; color: #a4541f; }
+.restaurant-info .ri-safety.level-5 { background: #f8e4e8; color: #a13a52; }
+.restaurant-info .ri-address { margin: 8px 0 0; color: var(--ink-2); font-size: 12px; }
+.restaurant-info .ri-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.restaurant-info .ri-tag { padding: 3px 9px; border-radius: 999px; background: var(--field); color: var(--ink-2); font-size: 11px; }
+.restaurant-info .ri-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--seg); font-size: 11px; }
+.restaurant-info .ri-author { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); font-weight: 500; }
+.restaurant-info .ri-area { flex: 0 0 auto; color: var(--ink-3); }
 .restaurant-list-section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--seg); }
 .restaurant-list-section h2 { margin: 0 0 10px; color: var(--ink); font-size: 15px; font-weight: 700; }
 .restaurant-list-section h2 span { color: var(--ink-3); font-weight: 400; }

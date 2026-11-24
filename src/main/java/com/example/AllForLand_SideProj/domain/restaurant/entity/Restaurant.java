@@ -47,4 +47,8 @@ public class Restaurant extends BaseEntity {
 
     @Column(name = "rating", precision = 3, scale = 2)
     private BigDecimal rating;
+    
+    public boolean isOwnedBy(String loginId) {
+        return user != null && loginId != null && loginId.equals(user.getLoginId());
+    }
 }

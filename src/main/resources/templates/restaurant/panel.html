@@ -11,6 +11,11 @@
         </label>
         <button id="restaurant-add" class="button" type="button" disabled>맛집 추가하기</button>
     </div>
+    <div class="restaurant-scope" role="group" aria-label="맛집 보기 범위" th:attr="data-logged-in=${loginId != null}">
+        <button id="restaurant-scope-all" class="button" type="button" aria-pressed="true">전체 맛집</button>
+        <button id="restaurant-scope-mine" class="button secondary" type="button" aria-pressed="false">내 맛집</button>
+    </div>
+    <p id="restaurant-scope-hint" class="restaurant-hint" hidden>로그인하면 내가 등록한 맛집만 볼 수 있어요.</p>
     <p id="restaurant-hint" class="restaurant-hint" hidden>
         지도의 음식점 아이콘이나 추가하고 싶은 위치를 클릭하세요.
         <button id="restaurant-pick-cancel" class="button secondary" type="button">취소</button>
@@ -36,9 +41,9 @@
     </form>
     <p id="restaurant-message" class="restaurant-message" role="status" aria-live="polite" hidden></p>
     <section class="restaurant-list-section" aria-labelledby="restaurant-list-heading">
-        <h2 id="restaurant-list-heading">추가한 맛집 <span id="restaurant-count">0</span></h2>
+        <h2 id="restaurant-list-heading">맛집 <span id="restaurant-count">0</span></h2>
         <ul id="restaurant-list" class="restaurant-list"></ul>
-        <p id="restaurant-empty" class="restaurant-empty" hidden>아직 추가한 맛집이 없어요.</p>
+        <p id="restaurant-empty" class="restaurant-empty" hidden>아직 등록된 맛집이 없어요.</p>
     </section>
 </aside>
 </body>

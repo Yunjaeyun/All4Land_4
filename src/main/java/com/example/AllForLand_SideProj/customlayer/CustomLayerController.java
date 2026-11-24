@@ -8,6 +8,6 @@ public class CustomLayerController {
 
     @GetMapping("/custom-layers")
     public String index() {
-        return "redirect:/?menu=custom-layer";
+        return "redirect:/map?menu=custom-layer";
     }
 }

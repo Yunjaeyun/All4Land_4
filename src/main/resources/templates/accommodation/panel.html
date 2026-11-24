@@ -91,9 +91,14 @@
     </form>
     <p id="accommodation-message" class="accommodation-message" role="status" aria-live="polite" hidden></p>
 </aside>
-<aside id="accommodation-results" class="map-panel accommodation-results" th:fragment="results" aria-label="숙소 검색 결과" hidden>
+<aside id="accommodation-results" class="map-panel accommodation-results" th:fragment="results" aria-label="숙소 검색 결과" hidden th:attr="data-logged-in=${loginId != null}">
     <section class="accommodation-list-section" aria-labelledby="accommodation-list-heading">
-        <h2 id="accommodation-list-heading">검색 결과 <span id="accommodation-count">0</span></h2>
+        <div class="accommodation-scope" role="group" aria-label="숙소 보기 범위">
+            <button id="accommodation-scope-all" class="button" type="button" aria-pressed="true">전체 숙소</button>
+            <button id="accommodation-scope-favorites" class="button secondary" type="button" aria-pressed="false">찜한 숙소</button>
+        </div>
+        <p id="accommodation-scope-hint" class="accommodation-hint" hidden>로그인하면 마음에 드는 숙소를 찜해 모아 볼 수 있어요.</p>
+        <h2 id="accommodation-list-heading">숙소 <span id="accommodation-count">0</span></h2>
         <ul id="accommodation-list" class="accommodation-list"></ul>
         <p id="accommodation-empty" class="accommodation-empty" hidden>조건에 맞는 숙소가 없습니다.</p>
     </section>

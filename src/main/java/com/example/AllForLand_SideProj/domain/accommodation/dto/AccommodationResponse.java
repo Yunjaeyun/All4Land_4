@@ -23,12 +23,14 @@ public record AccommodationResponse(
         String dayType,
         String lsoaName,
         Integer safetyLevel,
-        Integer rank
+        Integer rank,
+        boolean favorited
 ) {
-	
-	public static AccommodationResponse from(Accommodation a) {
-	        return from(a, null);
-	    }
+
+    public static AccommodationResponse from(Accommodation a) {
+        return from(a, null);
+    }
+
     public static AccommodationResponse from(Accommodation a, Integer rank) {
         SafetyZone zone = a.getSafetyZone();
         return new AccommodationResponse(
@@ -38,7 +40,16 @@ public record AccommodationResponse(
                 a.getDistanceCityCenterKm(), a.getDistanceMetroKm(), a.getDayType(),
                 zone == null ? null : zone.getLsoaName(),
                 zone == null ? null : zone.getSafetyLevel(),
-                rank
+                rank,
+                false
+        );
+    }
+
+    public AccommodationResponse withFavorited(boolean favorited) {
+        return new AccommodationResponse(
+                id, name, roomType, priceTotal, latitude, longitude, maxGuests, bedrooms,
+                cleanlinessScore, satisfactionScore, isSuperhost, distanceCityCenterKm, distanceMetroKm,
+                dayType, lsoaName, safetyLevel, rank, favorited
         );
     }
 }

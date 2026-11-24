@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SafeStay London</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg: #f5f2ec;
+    --surface: #ffffff;
+    --ink: #22211e;
+    --ink-2: #66635a;
+    --ink-3: #9a958a;
+    --line: #e2dcd0;
+    --line-2: #ece7dc;
+    --sage: #3d6b4f;
+    --sage-deep: #2f5440;
+    --sage-soft: #e6eee4;
+    --accent: #c27a3a;
+    --accent-soft: #f7ecdf;
+    --accent-ink: #8a5424;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Noto Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+}
+.wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 32px; }
+
+header { height: 72px; display: flex; align-items: center; }
+.brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: #2b2a27; font-family: Arial, "Noto Sans KR", sans-serif; }
+.brand-name { display: block; font-size: 17px; font-weight: 800; letter-spacing: -0.4px; line-height: 1.1; }
+.brand-name span { font-weight: 400; color: #6e6a60; }
+.brand-tag { display: block; font-size: 11px; color: #8a847a; margin-top: 3px; }
+
+main { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+.hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 56px;
+    padding: 8px 0 28px;
+}
+.eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin: 0 0 16px;
+    font-size: 14px; font-weight: 500; color: var(--sage);
+}
+.eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--sage); }
+h1 {
+    margin: 0 0 18px;
+    font-size: clamp(32px, 3.9vw, 44px);
+    line-height: 1.25;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+    word-break: keep-all;
+}
+.lead {
+    margin: 0;
+    max-width: 460px;
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--ink-2);
+    word-break: keep-all;
+}
+.cta { margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 50px; padding: 0 26px;
+    border-radius: 14px; font-size: 15px; font-weight: 500;
+    text-decoration: none; letter-spacing: -0.01em;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+button.btn { font: inherit; cursor: pointer; }
+.btn.primary { background: var(--ink); color: #fff; border: 1px solid var(--ink); }
+.btn.primary:hover { background: var(--sage-deep); border-color: var(--sage-deep); }
+.btn.ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+.btn.ghost:hover { border-color: var(--sage); color: var(--sage); }
+.guest {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 20px;
+    font-size: 14px; font-weight: 500; color: var(--ink-2);
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 2px;
+}
+.guest:hover { color: var(--ink); border-color: var(--ink-2); }
+
+.visual {
+    height: 320px;
+    border-radius: 28px;
+    overflow: hidden;
+    border: 1px solid var(--line-2);
+}
+.visual svg { width: 100%; height: 100%; display: block; }
+
+.track-wrap {
+    overflow: hidden;
+    cursor: grab;
+    touch-action: pan-y;
+    margin: 0 -32px;
+    padding: 4px 32px 8px;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.track-wrap.grabbing { cursor: grabbing; }
+.track { display: flex; gap: 16px; width: max-content; will-change: transform; }
+.card {
+    flex: 0 0 260px;
+    display: flex; flex-direction: column;
+    padding: 22px 22px 20px;
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    border-radius: 20px;
+}
+.card-icon {
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    border-radius: 14px;
+    background: var(--sage-soft);
+    color: var(--sage);
+    margin-bottom: 18px;
+}
+.card-icon svg { width: 22px; height: 22px; }
+.card.food .card-icon { background: var(--accent-soft); color: var(--accent); }
+.card h3 { margin: 0 0 6px; font-size: 17px; font-weight: 700; line-height: 1.35; letter-spacing: -0.02em; }
+.card p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--ink-2); word-break: keep-all; }
+.need-login {
+    align-self: flex-start;
+    margin-top: 14px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    font-size: 12px; font-weight: 500;
+}
+
+footer {
+    margin-top: 12px;
+    border-top: 1px solid var(--line);
+    padding: 16px 0 20px;
+    font-size: 12px; color: var(--ink-3);
+}
+
+@media (max-width: 880px) {
+    .hero { grid-template-columns: 1fr; gap: 32px; padding: 16px 0 32px; }
+    .visual { order: -1; height: 220px; }
+    main { justify-content: flex-start; }
+}
+@media (max-width: 560px) {
+    .wrap { padding: 0 20px; }
+    header { height: 64px; }
+    .hero { padding: 8px 0 24px; }
+    .cta { flex-direction: column; align-items: stretch; }
+    .btn { width: 100%; }
+    .guest { align-self: center; }
+    .track-wrap { margin: 0 -20px; padding: 4px 20px 8px; }
+    .card { flex-basis: 236px; }
+    .visual { height: 180px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <a class="brand" th:href="@{/}">
+            <svg width="38" height="38" viewBox="0 0 36 36" aria-hidden="true">
+                <rect width="36" height="36" rx="10" fill="#3d6b4f"/>
+                <path d="M18 7 C13 7 10 10.8 10 15.2 C10 20.8 18 29 18 29 C18 29 26 20.8 26 15.2 C26 10.8 23 7 18 7 Z" fill="#ffffff"/>
+                <circle cx="18" cy="15.2" r="3.4" fill="#3d6b4f"/>
+            </svg>
+            <span>
+                <span class="brand-name">SafeStay <span>London</span></span>
+                <span class="brand-tag">런던에서 안심하고 머무는 곳</span>
+            </span>
+        </a>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="copy">
+                <th:block th:if="${loginId == null}">
+                    <p class="eyebrow">런던 숙소 · 치안 · 맛집</p>
+                </th:block>
+                <th:block th:unless="${loginId == null}">
+                    <p class="eyebrow" th:text="${nickname ?: loginId} + '님, 환영합니다'">님, 환영합니다</p>
+                </th:block>
+
+                <h1>어디서 머물지 고민된다면<br>동네의 안전부터 보세요</h1>
+                <p class="lead">숙소를 고르기 전에 동네별 치안과 가격을 먼저 비교하고, 가고 싶은 맛집과 장소를 내 지도에 모아 둘 수 있어요.</p>
+
+                <th:block th:if="${loginId == null}">
+                    <div class="cta">
+                        <a class="btn primary" th:href="@{/signup}">회원가입하고 시작하기</a>
+                        <a class="btn ghost" th:href="@{/login}">로그인</a>
+                    </div>
+                    <a class="guest" th:href="@{/map}">로그인 없이 둘러보기 <span aria-hidden="true">→</span></a>
+                </th:block>
+                <th:block th:unless="${loginId == null}">
+                    <div class="cta">
+                        <a class="btn primary" th:href="@{/map}">지도로 가기</a>
+                        <form th:action="@{/logout}" method="post" style="margin:0">
+                            <button class="btn ghost" type="submit">로그아웃</button>
+                        </form>
+                    </div>
+                </th:block>
+            </div>
+
+            <div class="visual" aria-hidden="true">
+                <svg viewBox="0 0 520 320" preserveAspectRatio="xMidYMid slice">
+                    <rect width="520" height="320" fill="#e6eee4"/>
+                    <path d="M-10 90 C70 60 130 110 200 84 C260 60 300 100 360 80 L380 150 C330 190 280 170 220 200 C160 230 90 200 -10 230 Z" fill="#d6e4d7"/>
+                    <path d="M360 80 C420 60 470 90 530 70 L530 180 C480 200 430 170 380 150 Z" fill="#cddfcf"/>
+                    <path d="M-10 230 C90 200 160 230 220 200 C250 250 230 300 200 330 L-10 330 Z" fill="#cddfcf"/>
+                    <path d="M220 200 C280 170 330 190 380 150 C400 210 380 280 330 330 L200 330 C230 300 250 250 220 200 Z" fill="#d6e4d7"/>
+                    <path d="M380 150 C430 170 480 200 530 180 L530 330 L330 330 C380 280 400 210 380 150 Z" fill="#edf3ec"/>
+                    <path d="M40 40 L480 300 M300 10 L260 320 M0 160 L520 150" stroke="#ffffff" stroke-opacity="0.55" stroke-width="3" fill="none"/>
+                    <circle cx="262" cy="160" r="96" fill="#3d6b4f" fill-opacity="0.08" stroke="#3d6b4f" stroke-opacity="0.3" stroke-width="1.5" stroke-dasharray="5 6"/>
+                    <circle cx="262" cy="160" r="10" fill="#ffffff" stroke="#3d6b4f" stroke-width="3.5"/>
+                    <circle cx="262" cy="160" r="4" fill="#3d6b4f"/>
+                    <circle cx="200" cy="130" r="5" fill="#3d6b4f"/>
+                    <circle cx="180" cy="210" r="4" fill="#8fb497"/>
+                    <g transform="translate(330 118)"><circle r="15" fill="#c27a3a" stroke="#ffffff" stroke-width="3"/><g transform="translate(-7.2 -7.2) scale(0.6)" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></g></g>
+                </svg>
+            </div>
+        </section>
+
+        <div class="track-wrap">
+            <div class="track" id="track">
+                <article class="card">
+                    <div class="card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
+                    </div>
+                    <h3>숙소 찾기</h3>
+                    <p>동네와 방 유형, 가격으로 조건에 맞는 숙소를 찾아요.</p>
+                </article>
+                <article class="card">
+                    <div class="card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>
+                    </div>
+                    <h3>안전한 동네 비교</h3>
+                    <p>치안, 인구, 녹지를 지도에서 바꿔 보며 동네를 비교해요.</p>
+                </article>
+                <article class="card food">
+                    <div class="card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+                    </div>
+                    <h3>맛집 등록</h3>
+                    <p>가고 싶은 가게를 등록하고 지도에서 다시 찾아봐요.</p>
+                    <span class="need-login">로그인 후 이용</span>
+                </article>
+                <article class="card">
+                    <div class="card-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+                    </div>
+                    <h3>나만의 장소 지도</h3>
+                    <p>좋아하는 장소를 표시해 두고 시간대별로 찾아봐요.</p>
+                    <span class="need-login">로그인 후 이용</span>
+                </article>
+            </div>
+        </div>
+    </main>
+
+    <footer>GLA · data.police.uk · ONS · Kaggle Airbnb</footer>
+</div>
+
+<script>
+(function () {
+    var wrap = document.querySelector(".track-wrap");
+    var track = document.getElementById("track");
+    var originals = Array.prototype.slice.call(track.children);
+    originals.forEach(function (card) {
+        var copy = card.cloneNode(true);
+        copy.setAttribute("aria-hidden", "true");
+        track.appendChild(copy);
+    });
+
+    var SPEED = 0.035;
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var loopWidth = 0;
+    var x = 0;
+    var last = performance.now();
+    var dragging = false;
+    var startX = 0;
+    var startPos = 0;
+
+    function wrapPos(value) {
+        if (!loopWidth) return value;
+        return ((value % loopWidth) + loopWidth) % loopWidth;
+    }
+
+    function measure() {
+        var gap = parseFloat(getComputedStyle(track).columnGap) || 0;
+        loopWidth = originals.reduce(function (sum, card) {
+            return sum + card.getBoundingClientRect().width + gap;
+        }, 0);
+        x = wrapPos(x);
+    }
+
+    function frame(now) {
+        var dt = Math.min(now - last, 64);
+        last = now;
+        if (!dragging && !reduce) x = wrapPos(x + SPEED * dt);
+        track.style.transform = "translate3d(" + (-x) + "px, 0, 0)";
+        requestAnimationFrame(frame);
+    }
+
+    wrap.addEventListener("pointerdown", function (event) {
+        dragging = true;
+        startX = event.clientX;
+        startPos = x;
+        wrap.setPointerCapture(event.pointerId);
+        wrap.classList.add("grabbing");
+    });
+    wrap.addEventListener("pointermove", function (event) {
+        if (!dragging) return;
+        x = wrapPos(startPos - (event.clientX - startX));
+    });
+    function endDrag() {
+        dragging = false;
+        wrap.classList.remove("grabbing");
+    }
+    wrap.addEventListener("pointerup", endDrag);
+    wrap.addEventListener("pointercancel", endDrag);
+
+    window.addEventListener("resize", measure);
+    window.addEventListener("load", measure);
+    measure();
+    requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -24,8 +24,8 @@ public class LayerStorageController implements HttpSessionListener {
     }
     @GetMapping
     public ResponseEntity<LayerDocument> list(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam(required = false) Integer month, @RequestParam(required = false) String start,
-            @RequestParam(required = false) String end) {
+            @RequestParam(name = "month", required = false) Integer month, @RequestParam(name = "start", required = false) String start,
+            @RequestParam(name = "end", required = false) String end) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.findAll(workspaceResolver.resolve(request, response), month, start, end));
     }
     @PutMapping

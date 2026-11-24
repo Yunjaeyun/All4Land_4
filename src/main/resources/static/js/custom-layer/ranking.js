@@ -74,7 +74,7 @@ window.CustomLayerRanking = class {
             }
             const response = await fetch(`/api/custom-layers/ranking?order=${encodeURIComponent(this.order.value)}`, {
                 method: "POST", credentials: "same-origin", cache: "no-store",
-                headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(payload)
+              headers: { "Content-Type": "application/json", "Accept": "application/json", ...csrfHeaders() }, body: JSON.stringify(payload)
             });
             if (!response.ok) throw new Error(response.status === 400
                 ? "도형 좌표를 확인하세요. 교차하는 다각형이나 길이·면적이 없는 도형은 집계할 수 없습니다."

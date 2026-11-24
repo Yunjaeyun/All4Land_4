@@ -122,3 +122,32 @@ aside.accommodation-results::-webkit-scrollbar { display: none; }
 aside.accommodation-results .accommodation-list-section { margin-top: 0; padding-top: 0; border-top: 0; }
 aside.accommodation-results .accommodation-list-section h2 { margin-bottom: 12px; font-size: 16px; }
 .accommodation-form select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236e6a60' stroke-width='1.6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; appearance: none; }
+
+/* 찜 탭 */
+.accommodation-results .accommodation-scope { display: flex; gap: 8px; margin: 0 0 10px; }
+.accommodation-results .accommodation-scope .button { flex: 1; min-height: 42px; border: 0; border-radius: 12px; background: #2b2a27; color: #ffffff; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.accommodation-results .accommodation-scope .button.secondary { background: #ffffff; color: #6e6a60; border: 1px solid #dcd5c8; }
+.accommodation-results .accommodation-scope .button:disabled { opacity: 0.5; cursor: not-allowed; }
+.accommodation-results .accommodation-scope .button:focus-visible { outline: 2px solid #3d6b4f; outline-offset: 2px; }
+.accommodation-results .accommodation-hint { margin: 0 0 12px; color: #3d6b4f; font-size: 12px; font-weight: 500; }
+
+/* 하트 버튼: 목록 카드 안과 정보창에서 같은 모양 */
+.acc-fav { display: grid; place-items: center; flex: 0 0 auto; width: 36px; height: 36px; padding: 0; border: 1px solid #e3ddd1; border-radius: 12px; background: #ffffff; color: #9a958a; cursor: pointer; }
+.acc-fav svg { width: 18px; height: 18px; display: block; }
+.acc-fav:hover { color: #b8475e; border-color: #e6c3ca; }
+.acc-fav.is-on { color: #b8475e; border-color: #e6c3ca; background: #fbf1f3; }
+.acc-fav:disabled { opacity: 0.5; cursor: wait; }
+.acc-fav:focus-visible { outline: 2px solid #3d6b4f; outline-offset: 2px; }
+
+/* 목록 카드: 카드 전체가 하나, 하트는 카드 우상단 */
+.accommodation-list li.acc-card { position: relative; min-width: 0; border: 1px solid #eae4d8; border-radius: 16px; background: #ffffff; }
+.accommodation-list li.acc-card:hover { border-color: #3d6b4f; }
+.accommodation-list li.acc-card .accommodation-item { width: 100%; padding: 12px 68px 12px 12px; border: 0; background: transparent; }
+.accommodation-list li.acc-card .accommodation-item:hover { border-color: transparent; }
+.accommodation-list li.acc-card .acc-fav { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); }
+.acc-fav[hidden] { display: none; }
+.accommodation-list li.acc-card:has(.acc-fav[hidden]) .accommodation-item { padding-right: 12px; }
+
+/* 정보창 */
+.accommodation-info .acc-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.accommodation-info .acc-fav-info { margin-left: auto; }
